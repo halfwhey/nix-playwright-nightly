@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: nix flake check
+        run: nix flake check --no-write-lock-file
+
+      - name: Build playwright-cli
+        run: nix build --no-write-lock-file .#playwright-cli
+
+      - name: Build playwright-mcp
+        run: nix build --no-write-lock-file .#playwright-mcp
+
+      - name: Build playwright-python
+        run: nix build --no-write-lock-file .#playwright-python
+
+      - name: Smoke test playwright-cli
+        run: ./result/bin/playwright-cli --version
+
+      - name: Smoke test playwright-mcp
+        run: nix build --no-write-lock-file --print-out-paths .#playwright-mcp | head -1 | xargs -I {} {}/bin/playwright-mcp --version
+
+      - name: Smoke test playwright-python
+        run: nix build --no-write-lock-file --print-out-paths .#playwright-python | head -1 | xargs -I {} {}/bin/playwright --version

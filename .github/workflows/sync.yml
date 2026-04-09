@@ -1,0 +1,51 @@
+name: sync
+
+on:
+  schedule:
+    # Every 2 hours. Playwright's alpha cadence means new versions show up
+    # multiple times a day; this keeps tags within a couple of hours of
+    # publication without hammering the registries.
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use the workflow token so the subsequent push is authenticated.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "nix-playwright-nightly[bot]"
+          git config user.email "nix-playwright-nightly[bot]@users.noreply.github.com"
+
+      # Each tool runs its own backfill. If any step fails we stop and let
+      # a human investigate before more versions accumulate. Order matters
+      # only in that each completed update adds commits that the next tool's
+      # backfill will respect.
+      - name: Backfill cli
+        run: ./scripts/backfill.sh cli
+
+      - name: Backfill mcp
+        run: ./scripts/backfill.sh mcp
+
+      - name: Backfill python
+        run: ./scripts/backfill.sh python
+
+      - name: Push commits
+        run: git push origin HEAD:main
