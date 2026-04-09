@@ -42,7 +42,7 @@ $ playwright-cli open --browser=chromium https://example.com
 
 Every commit of `main` exposes all known versions side by side as flake attributes:
 
-- `playwright-cli` / `playwright-mcp` / `playwright-python` alias to the current upstream latest (the one `pins/<tool>.json`'s `.latest` pointer names).
+- `playwright-cli` / `playwright-mcp` / `playwright-python` alias to the current upstream latest (the one `pins/pin.json`'s `.<tool>.latest` pointer names).
 - `playwright-cli-<version>` / `playwright-mcp-<version>` / `playwright-python-<version>` are the same packages pinned to the exact version you name. Because the Nix CLI parses `.` as an attrpath separator, the version segment uses underscores: `playwright-cli-0_1_5`, `playwright-mcp-0_0_70`, `playwright-python-1_58_0`.
 - `playwright-<tool>-browsers` and `playwright-<tool>-<version>-browsers` are the corresponding browser linkFarms, exposed for library users who embed playwright and set their own `PLAYWRIGHT_BROWSERS_PATH`.
 
@@ -105,11 +105,9 @@ flake.nix                           # thin: inputs, outputs, system loop, import
 packages.nix                        # reads each manifest, exposes versioned + latest attrs
 flake.lock
 pins/
-  cli.json                          # MANIFEST: { latest, versions } for cli
-  mcp.json                          # MANIFEST for mcp
-  python.json                       # MANIFEST for python
+  pin.json                          # MANIFEST: { cli: { latest, versions }, mcp: {...}, python: {...} }
   cli/
-    <version>.json                  # per-version cli pin data (managed by update-cli.sh)
+    <version>.json                  # per-version cli pin data (managed by scripts/update-cli.sh)
   mcp/
     <version>.json                  # per-version mcp pin data
   python/
@@ -130,9 +128,9 @@ pkgs/
 scripts/
   lib.sh                            # shared shell helpers (hash prefetch, JSON pin emitters)
   backfill.sh                       # enumerate missing versions and drive the update scripts
-update-cli.sh                       # ./update-cli.sh [version]     default: latest on npm
-update-mcp.sh                       # ./update-mcp.sh [version]     default: latest on npm
-update-python.sh                    # ./update-python.sh [version]  default: latest on PyPI
+  update-cli.sh                     # ./scripts/update-cli.sh [version]     default: latest on npm
+  update-mcp.sh                     # ./scripts/update-mcp.sh [version]     default: latest on npm
+  update-python.sh                  # ./scripts/update-python.sh [version]  default: latest on PyPI
 .github/workflows/
   sync.yml                          # scheduled: backfill every missing version since last run
   ci.yml                            # PR/push: nix flake check + smoke builds
@@ -144,21 +142,28 @@ This is a fresh project, not a fork. The per-browser fetchers under `lib/browser
 
 ## Pin file shape
 
-### Manifest (`pins/<tool>.json`)
+### Manifest (`pins/pin.json`)
 
-The manifest is authoritative for what versions exist and which one is latest. `packages.nix` reads it with `builtins.fromJSON (builtins.readFile ./pins/<tool>.json)` and maps over `.versions` to build the versioned flake attributes; `.latest` picks which version backs the unversioned `playwright-<tool>` alias.
+The manifest is authoritative for what versions exist and which one is latest. `packages.nix` reads it once with `builtins.fromJSON (builtins.readFile ./pins/pin.json)` and accesses each tool's sub-object (`pins.cli`, `pins.mcp`, `pins.python`). `.versions` maps to versioned flake attributes; `.latest` picks which version backs the unversioned `playwright-<tool>` alias.
 
 ```json
 {
-  "latest": "0.1.5",
-  "versions": [
-    "0.1.5",
-    "0.1.4"
-  ]
+  "cli": {
+    "latest": "0.1.5",
+    "versions": ["0.1.5", "0.1.4"]
+  },
+  "mcp": {
+    "latest": "0.0.70",
+    "versions": ["0.0.70"]
+  },
+  "python": {
+    "latest": "1.58.0",
+    "versions": ["1.58.0"]
+  }
 }
 ```
 
-`versions` is appended to in publish-time order (backfill runs the update script per missing version in chronological order). `latest` moves only when the version being added matches the upstream `dist-tags.latest` / `info.version`.
+`versions` for each tool is appended to in publish-time order (backfill runs the update script per missing version in chronological order). `latest` moves only when the version being added matches the upstream `dist-tags.latest` / `info.version`.
 
 ### Per-version pin (`pins/<tool>/<version>.json`)
 
@@ -207,22 +212,23 @@ let
   # disk still uses the dotted version.
   toAttr = v: builtins.replaceStrings [ "." ] [ "_" ] v;
 
-  buildTool = { prefix, manifestPath, pinDir, mk }:
+  buildTool = { prefix, toolManifest, pinDir, mk }:
     let
-      manifest = readJSON manifestPath;
       pinFor   = v: readJSON (pinDir + "/${v}.json");
-      versionedPkgs     = map (v: { name = "${prefix}-${toAttr v}";          value = mk (pinFor v); }) manifest.versions;
-      versionedBrowsers = map (v: { name = "${prefix}-${toAttr v}-browsers"; value = mkBrowsers (pinFor v).browsers; }) manifest.versions;
-      latestPin = pinFor manifest.latest;
+      versionedPkgs     = map (v: { name = "${prefix}-${toAttr v}";          value = mk (pinFor v); }) toolManifest.versions;
+      versionedBrowsers = map (v: { name = "${prefix}-${toAttr v}-browsers"; value = mkBrowsers (pinFor v).browsers; }) toolManifest.versions;
+      latestPin = pinFor toolManifest.latest;
     in
     builtins.listToAttrs (versionedPkgs ++ versionedBrowsers) // {
       "${prefix}"          = mk latestPin;
       "${prefix}-browsers" = mkBrowsers latestPin.browsers;
     };
 
-  cliOutputs    = buildTool { prefix = "playwright-cli";    manifestPath = ./pins/cli.json;    pinDir = ./pins/cli;    mk = mkCli; };
-  mcpOutputs    = buildTool { prefix = "playwright-mcp";    manifestPath = ./pins/mcp.json;    pinDir = ./pins/mcp;    mk = mkMcp; };
-  pythonOutputs = buildTool { prefix = "playwright-python"; manifestPath = ./pins/python.json; pinDir = ./pins/python; mk = mkPython; };
+  pins = readJSON ./pins/pin.json;
+
+  cliOutputs    = buildTool { prefix = "playwright-cli";    toolManifest = pins.cli;    pinDir = ./pins/cli;    mk = mkCli; };
+  mcpOutputs    = buildTool { prefix = "playwright-mcp";    toolManifest = pins.mcp;    pinDir = ./pins/mcp;    mk = mkMcp; };
+  pythonOutputs = buildTool { prefix = "playwright-python"; toolManifest = pins.python; pinDir = ./pins/python; mk = mkPython; };
 in
 cliOutputs // mcpOutputs // pythonOutputs // {
   default = cliOutputs."playwright-cli";
@@ -270,15 +276,15 @@ npm:playwright@<driver> .gitHead                              →  microsoft/pla
 raw.../microsoft/playwright/<sha>/packages/playwright-core/browsers.json
 ```
 
-The Python codepath in `update-python.sh` stays structurally separate from the npm codepath — it has no `dependencies.playwright` to read. Note: beta drivers (e.g. `1.57.0-beta-...`) are not tagged in `microsoft/playwright`, so we resolve the SHA via npm `playwright@<driver>.gitHead` rather than `git ls-remote refs/tags/v<driver>`.
+The Python codepath in `scripts/update-python.sh` stays structurally separate from the npm codepath — it has no `dependencies.playwright` to read. Note: beta drivers (e.g. `1.57.0-beta-...`) are not tagged in `microsoft/playwright`, so we resolve the SHA via npm `playwright@<driver>.gitHead` rather than `git ls-remote refs/tags/v<driver>`.
 
-## Update scripts (`update-cli.sh`, `update-mcp.sh`, `update-python.sh`)
+## Update scripts (`scripts/update-cli.sh`, `scripts/update-mcp.sh`, `scripts/update-python.sh`)
 
 All three share the same shape. Differences are only in steps 1–3 (resolving the package → playwright SHA chain) and in which hash emitter they call (`emit_npm_pkg_hashes` for cli/mcp, `emit_python_pkg_hashes` for python). Shared helpers live in `scripts/lib.sh`.
 
 ```sh
-./update-cli.sh            # bump to latest on npm
-./update-cli.sh 0.1.4      # bump to specific version
+./scripts/update-cli.sh            # bump to latest on npm
+./scripts/update-cli.sh 0.1.4      # bump to specific version
 ```
 
 Steps:
@@ -294,7 +300,7 @@ Steps:
    - For each supported system, `fetchzip` of each per-browser CDN archive → `browsers.<name>.hashes.<system>`
 6. Fetch `browsers.json` from `raw.githubusercontent.com/microsoft/playwright/<sha>/packages/playwright-core/browsers.json`. Filter to `installByDefault: true` and the browsers we have fetchers for.
 7. Assemble the new pin JSON object with a single `jq -n ...` call (top-level fields + hash fragment + `browsers` object) and pipe into `write_pin_file "$package_version"`, which pretty-prints via `jq .` and atomically writes `pins/<tool>/<version>.json`.
-8. Call `update_manifest "$package_version" "$is_latest"` to append the version to `pins/<tool>.json`'s `.versions` array and (when `is_latest=1`) move the `.latest` pointer.
+8. Call `update_manifest "$package_version" "$is_latest"` to append the version to `pins/pin.json`'s `.<tool>.versions` array and (when `is_latest=1`) move `.<tool>.latest`.
 9. `nix build .#playwright-<tool>-<version>` to verify the specific pin.
 10. Commit: `git commit -m "<tool>: add <version>"`. No tag.
 
@@ -307,7 +313,7 @@ The update scripts are idempotent: if `pins/<tool>/<version>.json` already exist
 The per-tool enumeration + update loop lives in `scripts/backfill.sh`:
 
 1. `curl https://registry.npmjs.org/@playwright/<tool>` (or PyPI equivalent) → full list of published versions with publish times.
-2. Read `pins/<tool>.json`'s `.versions` array as the set of already-processed versions.
+2. Read `pins/pin.json`'s `.<tool>.versions` array as the set of already-processed versions.
 3. Compute `missing = all_versions \ already_processed`. Include **every** version — `latest`, `next`, alpha, beta. Do not filter by dist-tag.
 4. The registry JSON is already sorted by publish time; `jq` preserves that order.
 5. For each missing version, in order, run `./update-<tool>.sh <version>`. The update script builds and commits.
@@ -319,9 +325,9 @@ The workflow runs `scripts/backfill.sh cli`, then `mcp`, then `python`, then `gi
 
 ## Maintenance
 
-Everyday operation is CI-driven. Manual bumps are also supported: run `./update-<tool>.sh [version]` locally, verify, commit, push.
+Everyday operation is CI-driven. Manual bumps are also supported: run `./scripts/update-<tool>.sh [version]` locally, verify, commit, push.
 
-To retrigger a failed sync for a specific version: delete the half-written `pins/<tool>/<version>.json` (if any) and re-run the workflow, or run `./update-<tool>.sh <version>` manually.
+To retrigger a failed sync for a specific version: delete the half-written `pins/<tool>/<version>.json` (if any) and re-run the workflow, or run `./scripts/update-<tool>.sh <version>` manually.
 
 ## NixOS notes
 

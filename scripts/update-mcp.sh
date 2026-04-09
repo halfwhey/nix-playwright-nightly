@@ -1,27 +1,24 @@
 #!/usr/bin/env bash
-# Usage: ./update-cli.sh [version]
+# Usage: ./scripts/update-mcp.sh [version]
 #
-# Add @playwright/cli@<version> (default: latest on npm) to pins/cli/. Resolves
-# the matching playwright-core alpha, fetches its browsers.json, prefetches all
-# browser archive hashes for every supported system, writes the per-version pin
-# file, updates pins/cli.json (the manifest), builds the versioned attr, and
-# commits.
+# Add @playwright/mcp@<version> (default: latest on npm) to pins/mcp/.
+# Resolution flow matches update-cli.sh.
 
 set -euo pipefail
 
-TOOL="cli"
-FLAKE_ROOT="$(cd "$(dirname "$0")" && pwd)"
+TOOL="mcp"
+FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export TOOL FLAKE_ROOT
 # shellcheck source=scripts/lib.sh
 . "${FLAKE_ROOT}/scripts/lib.sh"
 
 require_cmd curl jq nix nix-build git
 
-log "resolving upstream latest @playwright/cli from npm"
-upstream_latest=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli" \
+log "resolving upstream latest @playwright/mcp from npm"
+upstream_latest=$(curl -fsSL "https://registry.npmjs.org/@playwright/mcp" \
   | jq -r '.["dist-tags"].latest')
 if [ -z "$upstream_latest" ] || [ "$upstream_latest" = "null" ]; then
-  die "could not resolve upstream latest for @playwright/cli"
+  die "could not resolve upstream latest for @playwright/mcp"
 fi
 log "upstream latest: $upstream_latest"
 
@@ -36,11 +33,11 @@ if has_pin_for "$package_version"; then
   exit 0
 fi
 
-log "resolving @playwright/cli@${package_version} -> playwright-core version"
-playwright_version=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli/${package_version}" \
+log "resolving @playwright/mcp@${package_version} -> playwright-core version"
+playwright_version=$(curl -fsSL "https://registry.npmjs.org/@playwright/mcp/${package_version}" \
   | jq -r '.dependencies.playwright // .dependencies["playwright-core"] // empty')
 if [ -z "$playwright_version" ]; then
-  die "could not resolve dependencies.playwright for @playwright/cli@${package_version}"
+  die "could not resolve dependencies.playwright for @playwright/mcp@${package_version}"
 fi
 log "playwright-core version: $playwright_version"
 
@@ -55,7 +52,7 @@ log "playwright-core SHA: $playwright_sha"
 log "fetching browsers.json at ${playwright_sha}"
 browsers_json=$(fetch_browsers_json "$playwright_sha")
 
-pkg_hashes=$(emit_npm_pkg_hashes "playwright-cli" "$package_version")
+pkg_hashes=$(emit_npm_pkg_hashes "playwright-mcp" "$package_version")
 browsers_obj=$(parse_browsers_json "$browsers_json" | emit_browsers_obj)
 
 jq -n \

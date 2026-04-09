@@ -1,4 +1,5 @@
-# Shared helpers sourced by update-cli.sh / update-mcp.sh / update-python.sh.
+# Shared helpers sourced by scripts/update-cli.sh, scripts/update-mcp.sh, and
+# scripts/update-python.sh.
 # Callers must set: TOOL (cli|mcp|python), FLAKE_ROOT (absolute path).
 
 set -euo pipefail
@@ -7,7 +8,7 @@ set -euo pipefail
 : "${FLAKE_ROOT:?FLAKE_ROOT must be set by caller}"
 
 PIN_DIR="${FLAKE_ROOT}/pins/${TOOL}"
-MANIFEST_FILE="${FLAKE_ROOT}/pins/${TOOL}.json"
+MANIFEST_FILE="${FLAKE_ROOT}/pins/pin.json"
 SUPPORTED_SYSTEMS=(x86_64-linux aarch64-linux)
 DUMMY_HASH="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
@@ -246,31 +247,27 @@ has_pin_for() {
   [ -f "${PIN_DIR}/${version}.json" ]
 }
 
-# Merge the given version into pins/<tool>.json. If is_latest=1, also move the
-# `latest` pointer. Creates the manifest on first call. Idempotent: adding a
-# version already present in .versions leaves the array untouched.
+# Merge the given version into pins/pin.json under the .${TOOL} key. If
+# is_latest=1, also move the `latest` pointer. Creates the file on first call.
+# Idempotent: adding a version already present in .versions leaves it untouched.
 update_manifest() {
   local version="$1" is_latest="$2"
-  local existing_latest='""'
-  local existing_versions='[]'
+  local manifest='{}'
   if [ -f "$MANIFEST_FILE" ]; then
-    existing_latest=$(jq '.latest // ""' "$MANIFEST_FILE")
-    existing_versions=$(jq -c '.versions // []' "$MANIFEST_FILE")
+    manifest=$(cat "$MANIFEST_FILE")
   fi
-  local new_latest
-  if [ "$is_latest" = "1" ]; then
-    new_latest=$(jq -n --arg v "$version" '$v')
-  else
-    new_latest="$existing_latest"
-  fi
-  local new_versions
-  new_versions=$(printf '%s' "$existing_versions" | jq --arg v "$version" \
-    'if any(.[]; . == $v) then . else . + [$v] end')
   local tmp="${MANIFEST_FILE}.tmp"
-  jq -n \
-    --argjson latest "$new_latest" \
-    --argjson versions "$new_versions" \
-    '{ latest: $latest, versions: $versions }' > "$tmp"
+  printf '%s' "$manifest" | jq \
+    --arg tool "$TOOL" \
+    --arg v "$version" \
+    --argjson is_latest "$is_latest" \
+    '
+    . as $m
+    | ($m[$tool] // { latest: "", versions: [] }) as $entry
+    | ($entry.versions | if any(.[]; . == $v) then . else . + [$v] end) as $new_versions
+    | (if $is_latest == 1 then $v else $entry.latest end) as $new_latest
+    | $m + { ($tool): { latest: $new_latest, versions: $new_versions } }
+    ' > "$tmp"
   mv "$tmp" "$MANIFEST_FILE"
 }
 
@@ -287,7 +284,7 @@ finalize() {
     # Must stage BEFORE `nix build`: nix's git+file:// flake resolver only
     # sees tracked (or intent-to-add) files in a dirty worktree, so a brand
     # new pins/<tool>/<version>.json would be invisible otherwise.
-    git add "pins/${TOOL}/${package_version}.json" "pins/${TOOL}.json"
+    git add "pins/${TOOL}/${package_version}.json" "pins/pin.json"
   )
   log "building .#playwright-${TOOL}-${attr_version}"
   (cd "$FLAKE_ROOT" && nix build --no-link ".#playwright-${TOOL}-${attr_version}")

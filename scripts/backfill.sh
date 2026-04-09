@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/backfill.sh <cli|mcp|python>
 #
-# Enumerate every version published for <tool>, diff against pins/<tool>.json
-# (the manifest's .versions array), and run ./update-<tool>.sh for each
+# Enumerate every version published for <tool>, diff against pins/pin.json
+# (the .versions array under the tool's key), and run scripts/update-<tool>.sh for each
 # missing version in chronological (publish-time) order. The update script
 # itself handles commit. On any failure, exit non-zero immediately so CI
 # fails loudly and a human investigates before more versions pile up.
@@ -53,11 +53,11 @@ if [ -z "$all_versions" ]; then
   die "no versions returned from registry"
 fi
 
-log "reading existing versions from pins/${TOOL}.json"
-manifest_file="${FLAKE_ROOT}/pins/${TOOL}.json"
+log "reading existing versions from pins/pin.json"
+manifest_file="${FLAKE_ROOT}/pins/pin.json"
 existing=""
 if [ -f "$manifest_file" ]; then
-  existing=$(jq -r '.versions[]? // empty' "$manifest_file")
+  existing=$(jq -r --arg tool "$TOOL" '.[$tool].versions[]? // empty' "$manifest_file")
 fi
 
 # Compute missing = all \ existing, preserving chronological order of `all`.
@@ -80,8 +80,8 @@ printf '%s\n' "$missing" | sed 's/^/  - /' >&2
 
 while IFS= read -r version; do
   [ -z "$version" ] && continue
-  log "running update-${TOOL}.sh $version"
-  "./update-${TOOL}.sh" "$version"
+  log "running scripts/update-${TOOL}.sh $version"
+  "${FLAKE_ROOT}/scripts/update-${TOOL}.sh" "$version"
 done <<< "$missing"
 
 log "backfill complete for ${TOOL}"

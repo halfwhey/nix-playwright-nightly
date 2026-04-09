@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ./update-python.sh [version]
+# Usage: ./scripts/update-python.sh [version]
 #
 # Add PyPI playwright==<version> (default: latest on PyPI) to pins/python/.
 # PyPI's playwright lives in microsoft/playwright-python and hardcodes a
@@ -9,7 +9,7 @@
 set -euo pipefail
 
 TOOL="python"
-FLAKE_ROOT="$(cd "$(dirname "$0")" && pwd)"
+FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export TOOL FLAKE_ROOT
 # shellcheck source=scripts/lib.sh
 . "${FLAKE_ROOT}/scripts/lib.sh"

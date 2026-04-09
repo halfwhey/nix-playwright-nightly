@@ -30,26 +30,25 @@ let
 
   # Build the full attrset for one tool: versioned packages and versioned
   # browser passthroughs for every version in the manifest, plus latest
-  # aliases that point at manifest.latest.
+  # aliases that point at toolManifest.latest.
   buildTool =
     {
       prefix,
-      manifestPath,
+      toolManifest,
       pinDir,
       mk,
     }:
     let
-      manifest = readJSON manifestPath;
       pinFor = v: readJSON (pinDir + "/${v}.json");
       versionedPkgs = map (v: {
         name = "${prefix}-${toAttr v}";
         value = mk (pinFor v);
-      }) manifest.versions;
+      }) toolManifest.versions;
       versionedBrowsers = map (v: {
         name = "${prefix}-${toAttr v}-browsers";
         value = mkBrowsers (pinFor v).browsers;
-      }) manifest.versions;
-      latestPin = pinFor manifest.latest;
+      }) toolManifest.versions;
+      latestPin = pinFor toolManifest.latest;
     in
     builtins.listToAttrs (versionedPkgs ++ versionedBrowsers)
     // {
@@ -57,23 +56,25 @@ let
       "${prefix}-browsers" = mkBrowsers latestPin.browsers;
     };
 
+  pins = readJSON ./pins/pin.json;
+
   cliOutputs = buildTool {
     prefix = "playwright-cli";
-    manifestPath = ./pins/cli.json;
+    toolManifest = pins.cli;
     pinDir = ./pins/cli;
     mk = mkCli;
   };
 
   mcpOutputs = buildTool {
     prefix = "playwright-mcp";
-    manifestPath = ./pins/mcp.json;
+    toolManifest = pins.mcp;
     pinDir = ./pins/mcp;
     mk = mkMcp;
   };
 
   pythonOutputs = buildTool {
     prefix = "playwright-python";
-    manifestPath = ./pins/python.json;
+    toolManifest = pins.python;
     pinDir = ./pins/python;
     mk = mkPython;
   };
