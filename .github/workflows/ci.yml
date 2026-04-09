@@ -1,9 +1,11 @@
 name: ci
 
+# Manually triggered only. Runs `nix flake check` plus a smoke test of each
+# latest alias on the x86_64-linux runner, to complement local aarch64
+# development. Push this button from the Actions tab (or `gh workflow run
+# ci.yml`) whenever you want to prove a change holds on x86_64-linux.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   flake-check:
@@ -16,23 +18,22 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
+      # Transparently push/pull store paths through the GitHub Actions cache
+      # so repeat runs only rebuild what actually changed (first run is still
+      # slow because it has to prime the cache with ~2 GB of browsers).
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
       - name: nix flake check
         run: nix flake check --no-write-lock-file
 
-      - name: Build playwright-cli
-        run: nix build --no-write-lock-file .#playwright-cli
-
-      - name: Build playwright-mcp
-        run: nix build --no-write-lock-file .#playwright-mcp
-
-      - name: Build playwright-python
-        run: nix build --no-write-lock-file .#playwright-python
-
+      # `nix run .#X -- --version` realises the derivation, runs its
+      # mainProgram with --version, and exits. Replaces the old
+      # build-then-run pattern (which built each package twice).
       - name: Smoke test playwright-cli
-        run: ./result/bin/playwright-cli --version
+        run: nix run --no-write-lock-file .#playwright-cli -- --version
 
       - name: Smoke test playwright-mcp
-        run: nix build --no-write-lock-file --print-out-paths .#playwright-mcp | head -1 | xargs -I {} {}/bin/playwright-mcp --version
+        run: nix run --no-write-lock-file .#playwright-mcp -- --version
 
       - name: Smoke test playwright-python
-        run: nix build --no-write-lock-file --print-out-paths .#playwright-python | head -1 | xargs -I {} {}/bin/playwright --version
+        run: nix run --no-write-lock-file .#playwright-python -- --version

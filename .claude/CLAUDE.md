@@ -12,7 +12,7 @@ Pin `main` once and pick the version per tool via the flake attribute name:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    playwright.url = "github:<owner>/nix-playwright-nightly";
+    playwright.url = "github:halfwhey/nix-playwright-nightly";
   };
 
   outputs = { self, nixpkgs, playwright }:
@@ -20,9 +20,9 @@ Pin `main` once and pick the version per tool via the flake attribute name:
       devShells.${system}.default =
         nixpkgs.legacyPackages.${system}.mkShell {
           packages = [
-            playwright.packages.${system}.playwright-cli              # latest cli
-            playwright.packages.${system}."playwright-mcp-0.0.70"     # pinned mcp
-            playwright.packages.${system}."playwright-python-1.58.0"  # pinned python
+            playwright.packages.${system}.playwright-cli           # latest cli
+            playwright.packages.${system}.playwright-mcp-0_0_70    # pinned mcp
+            playwright.packages.${system}.playwright-python-1_58_0 # pinned python
           ];
         };
     };
@@ -43,16 +43,16 @@ $ playwright-cli open --browser=chromium https://example.com
 Every commit of `main` exposes all known versions side by side as flake attributes:
 
 - `playwright-cli` / `playwright-mcp` / `playwright-python` alias to the current upstream latest (the one `pins/<tool>.json`'s `.latest` pointer names).
-- `playwright-cli-<version>` / `playwright-mcp-<version>` / `playwright-python-<version>` are the same packages pinned to the exact version you name.
+- `playwright-cli-<version>` / `playwright-mcp-<version>` / `playwright-python-<version>` are the same packages pinned to the exact version you name. Because the Nix CLI parses `.` as an attrpath separator, the version segment uses underscores: `playwright-cli-0_1_5`, `playwright-mcp-0_0_70`, `playwright-python-1_58_0`.
 - `playwright-<tool>-browsers` and `playwright-<tool>-<version>-browsers` are the corresponding browser linkFarms, exposed for library users who embed playwright and set their own `PLAYWRIGHT_BROWSERS_PATH`.
 
 Nix is lazy, so referencing one versioned attribute only evaluates that version's pin JSON. Unused historical versions cost nothing at build time. There are **no git tags** for version selection — any recent commit of `main` has every version you'd want, selected by attribute name.
 
 ### Other patterns
 
-- **Latest of everything in one input** — pin `main`: `github:<owner>/nix-playwright-nightly`. Main's HEAD always has the freshest aliases for every tool.
-- **One-off with `nix run`** — `nix run github:<owner>/nix-playwright-nightly#playwright-cli-0.1.5 -- open https://example.com`.
-- **NixOS system package** — `environment.systemPackages = [ inputs.playwright.packages.${pkgs.system}."playwright-cli-0.1.5" ];`.
+- **Latest of everything in one input** — pin `main`: `github:halfwhey/nix-playwright-nightly`. Main's HEAD always has the freshest aliases for every tool.
+- **One-off with `nix run`** — `nix run github:halfwhey/nix-playwright-nightly#playwright-cli-0_1_5 -- open https://example.com`.
+- **NixOS system package** — `environment.systemPackages = [ inputs.playwright.packages.${pkgs.system}.playwright-cli-0_1_5 ];`.
 - **Library use (browsers only)** — `packages.${system}.playwright-<tool>-browsers` (latest) or `packages.${system}."playwright-<tool>-<version>-browsers"` (pinned) is exposed as a passthrough linkFarm. Point your own wrapper at it via `PLAYWRIGHT_BROWSERS_PATH`.
 
 ### What the consumer does NOT have to do
@@ -201,12 +201,18 @@ let
   };
   # ... mkMcp / mkPython analogous ...
 
+  # Dots in the version segment would be parsed as attrpath separators
+  # by the nix CLI (`.#playwright-cli-0.1.5` → three nested attrs), so we
+  # replace them with underscores for the attribute name. The pin file on
+  # disk still uses the dotted version.
+  toAttr = v: builtins.replaceStrings [ "." ] [ "_" ] v;
+
   buildTool = { prefix, manifestPath, pinDir, mk }:
     let
       manifest = readJSON manifestPath;
       pinFor   = v: readJSON (pinDir + "/${v}.json");
-      versionedPkgs     = map (v: { name = "${prefix}-${v}";          value = mk (pinFor v); }) manifest.versions;
-      versionedBrowsers = map (v: { name = "${prefix}-${v}-browsers"; value = mkBrowsers (pinFor v).browsers; }) manifest.versions;
+      versionedPkgs     = map (v: { name = "${prefix}-${toAttr v}";          value = mk (pinFor v); }) manifest.versions;
+      versionedBrowsers = map (v: { name = "${prefix}-${toAttr v}-browsers"; value = mkBrowsers (pinFor v).browsers; }) manifest.versions;
       latestPin = pinFor manifest.latest;
     in
     builtins.listToAttrs (versionedPkgs ++ versionedBrowsers) // {
@@ -296,7 +302,7 @@ The update scripts are idempotent: if `pins/<tool>/<version>.json` already exist
 
 ## CI: scheduled backfill
 
-`.github/workflows/sync.yml` runs on a schedule (every 2 hours) and backfills every version that has been published since the last sync. It pushes commits **directly to `main`**, no PR.
+`.github/workflows/sync.yml` runs on a schedule (once a day) and backfills every version that has been published since the last sync. It pushes commits **directly to `main`**, no PR.
 
 The per-tool enumeration + update loop lives in `scripts/backfill.sh`:
 

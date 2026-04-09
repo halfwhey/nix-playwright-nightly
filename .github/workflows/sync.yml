@@ -2,10 +2,9 @@ name: sync
 
 on:
   schedule:
-    # Every 2 hours. Playwright's alpha cadence means new versions show up
-    # multiple times a day; this keeps tags within a couple of hours of
-    # publication without hammering the registries.
-    - cron: '17 */2 * * *'
+    # Once a day at 03:17 UTC. Backfill catches up on every version published
+    # since the last run, so a daily cadence is enough.
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 concurrency:

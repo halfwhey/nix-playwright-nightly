@@ -32,7 +32,7 @@ let
 
   # Pre-built JS driver tarball: ships node + playwright-core JS code.
   # Layout (matches what playwright-python's _driver.py expects):
-  #   ./node             -- bundled node binary
+  #   ./node             -- bundled node binary (we replace with nixpkgs nodejs)
   #   ./package/cli.js   -- playwright-core entry point
   #   ./LICENSE
   driver = stdenv.mkDerivation {
@@ -53,6 +53,15 @@ let
       runHook preInstall
       mkdir -p $out
       cp -R . $out/
+      # Replace the bundled node with nixpkgs nodejs. The bundled aarch64
+      # node segfaults on NixOS after autoPatchelfHook (likely a glibc or
+      # stack-guard mismatch), and even on x86_64 the nixpkgs binary is the
+      # only one we can count on. playwright-python's _driver.py looks for
+      # ./driver/node next to the package, so swapping this symlink fixes
+      # both CLI callers and library callers (`from playwright.sync_api
+      # import sync_playwright`) without needing PLAYWRIGHT_NODEJS_PATH.
+      rm -f $out/node
+      ln -s ${lib.getExe nodejs} $out/node
       runHook postInstall
     '';
   };
@@ -106,17 +115,27 @@ python3Packages.buildPythonPackage {
     # _driver.py finds ./driver/package/cli.js next to its own files.
     mkdir -p $out/${python3Packages.python.sitePackages}/playwright/driver
     cp -R ${driver}/. $out/${python3Packages.python.sitePackages}/playwright/driver/
+
+    # Bake PLAYWRIGHT_BROWSERS_PATH and PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD into
+    # the package's __init__.py. `wrapProgram` only wraps the `playwright`
+    # CLI; library consumers (`from playwright.sync_api import ...`) never
+    # go through that wrapper, so without this injection they'd look for
+    # browsers under ~/.cache/ms-playwright. `setdefault` preserves any
+    # value the user has already set in their own environment.
+    init=$out/${python3Packages.python.sitePackages}/playwright/__init__.py
+    {
+      echo "import os as _nix_os"
+      echo "_nix_os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', '${browsers}')"
+      echo "_nix_os.environ.setdefault('PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD', '1')"
+      echo "del _nix_os"
+      cat $init
+    } > $init.new && mv $init.new $init
   '';
 
   postFixup = ''
-    # The bundled `driver/node` aarch64 binary segfaults on NixOS even after
-    # autoPatchelfHook (likely a glibc/stack-guard mismatch). Force the bundled
-    # JS driver to use the system nodejs via PLAYWRIGHT_NODEJS_PATH, which
-    # _driver.py honours.
     wrapProgram $out/bin/playwright \
       --set PLAYWRIGHT_BROWSERS_PATH ${browsers} \
-      --set PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD 1 \
-      --set PLAYWRIGHT_NODEJS_PATH ${lib.getExe nodejs}
+      --set PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD 1
   '';
 
   passthru = {

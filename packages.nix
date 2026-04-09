@@ -21,6 +21,13 @@ let
     browsers = mkBrowsers pin.browsers;
   };
 
+  # Attribute-name-safe version: nix CLI parses `.` as an attrpath separator
+  # so we can't expose `playwright-cli-0.1.5` as a flat attribute name (the
+  # user's `nix run .#playwright-cli-0.1.5` would try to descend into three
+  # nested attrs). Replace dots with underscores for the attribute name only;
+  # the pin file on disk still uses the dotted version.
+  toAttr = v: builtins.replaceStrings [ "." ] [ "_" ] v;
+
   # Build the full attrset for one tool: versioned packages and versioned
   # browser passthroughs for every version in the manifest, plus latest
   # aliases that point at manifest.latest.
@@ -35,11 +42,11 @@ let
       manifest = readJSON manifestPath;
       pinFor = v: readJSON (pinDir + "/${v}.json");
       versionedPkgs = map (v: {
-        name = "${prefix}-${v}";
+        name = "${prefix}-${toAttr v}";
         value = mk (pinFor v);
       }) manifest.versions;
       versionedBrowsers = map (v: {
-        name = "${prefix}-${v}-browsers";
+        name = "${prefix}-${toAttr v}-browsers";
         value = mkBrowsers (pinFor v).browsers;
       }) manifest.versions;
       latestPin = pinFor manifest.latest;

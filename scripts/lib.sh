@@ -274,16 +274,26 @@ update_manifest() {
   mv "$tmp" "$MANIFEST_FILE"
 }
 
-# Common tail: build the versioned attr, then stage the new pin file and the
-# manifest and commit. No tagging.
+# Common tail: stage the new pin file and manifest so the dirty worktree
+# exposes them to nix's flake resolver, build the versioned attr, then commit.
+# No tagging.
 finalize() {
   local package_version="$1"
-  log "building .#playwright-${TOOL}-${package_version}"
-  (cd "$FLAKE_ROOT" && nix build --no-link ".#playwright-${TOOL}-${package_version}")
+  # nix CLI parses `.` as attrpath separator, so the flake attribute name
+  # replaces dots with underscores (see packages.nix toAttr).
+  local attr_version="${package_version//./_}"
+  (
+    cd "$FLAKE_ROOT"
+    # Must stage BEFORE `nix build`: nix's git+file:// flake resolver only
+    # sees tracked (or intent-to-add) files in a dirty worktree, so a brand
+    # new pins/<tool>/<version>.json would be invisible otherwise.
+    git add "pins/${TOOL}/${package_version}.json" "pins/${TOOL}.json"
+  )
+  log "building .#playwright-${TOOL}-${attr_version}"
+  (cd "$FLAKE_ROOT" && nix build --no-link ".#playwright-${TOOL}-${attr_version}")
   log "commit"
   (
     cd "$FLAKE_ROOT"
-    git add "pins/${TOOL}/${package_version}.json" "pins/${TOOL}.json"
     if git diff --cached --quiet; then
       log "no changes to commit"
       return 0
