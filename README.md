@@ -26,7 +26,7 @@ Pin `main` once and pick the version per tool via the package attribute name:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    playwright.url = "github:<owner>/nix-playwright-nightly";
+    playwright.url = "github:halfwhey/nix-playwright-nightly";
   };
 
   outputs = { self, nixpkgs, playwright }:
@@ -92,6 +92,28 @@ $ playwright --version        # 1.58.0
 $ playwright-cli open --browser=chromium https://example.com
 ```
 
+### Binary cache
+
+Browser are included in the binary cache published to the public Cachix cache at
+
+`https://halfwhey.cachix.org`.
+
+Set it up once:
+
+```sh
+cachix use halfwhey
+```
+
+Or pass the cache and key explicitly for one-off builds:
+
+```sh
+nix build \
+  --option extra-substituters https://halfwhey.cachix.org \
+  --option extra-trusted-public-keys \
+    'halfwhey.cachix.org-1:6PtY2HXdJg8gVVe/uyWGqeWXg1cjfQEIi514Gsk4EeI=' \
+  github:halfwhey/nix-playwright-nightly#playwright-cli
+```
+
 ### Versioned outputs
 
 Every commit of `main` exposes all published versions side by side as flake attributes:
@@ -105,7 +127,7 @@ Nix is lazy: referencing a single versioned attribute only evaluates that versio
 ### Other patterns
 
 - **Latest of everything** the default: pin `main` and reference `playwright-cli`, `playwright-mcp`, `playwright-python`. Main's HEAD always has the freshest aliases.
-- **One-off** `nix run github:<owner>/nix-playwright-nightly#playwright-cli-0.1.5 -- open https://example.com`
+- **One-off** `nix run github:halfwhey/nix-playwright-nightly#playwright-cli-0.1.5 -- open https://example.com`
 - **NixOS system package** `environment.systemPackages = [ inputs.playwright.packages.${pkgs.system}."playwright-cli-0.1.5" ];`
 - **Browsers only** reference `playwright-<tool>-browsers` (latest) or `playwright-<tool>-<version>-browsers` (pinned) directly.
 
@@ -140,8 +162,11 @@ Nix is lazy: referencing a single versioned attribute only evaluates that versio
 
 Each script resolves the matching `playwright-core` version, prefetches every hash the pin needs, writes `pins/<tool>/<version>.json`, updates `pins/pin.json` (adding to the tool's `versions` array and moving `latest` when the version matches upstream), runs `nix build .#playwright-<tool>-<version>`, and commits the bump. Re-running with a version already present is a no-op.
 
-CI runs the same scripts every two hours to backfill any versions published since the last sync. See `.github/workflows/sync.yml`.
+CI runs the same update flow once a day against the current upstream latest for
+each tool, then refreshes the public browser cache for both `x86_64-linux` and
+`aarch64-linux`. See `.github/workflows/sync.yml`.
 
-## Attribution
+## Acknowledgement
 
-This flake adapts per-browser fetchers from [`pietdevries94/playwright-web-flake`](https://github.com/pietdevries94/playwright-web-flake). Adapted files under `lib/browsers/`.
+- This flake adapts per-browser fetchers from [`pietdevries94/playwright-web-flake`](https://github.com/pietdevries94/playwright-web-flake). Adapted files under `lib/browsers/`.
+- Thank you Cachix for hosting my binary cache for free.
