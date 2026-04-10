@@ -41,7 +41,7 @@ if [ -z "${UPDATE_SCRIPT_NIX_SHELL_READY:-}" ]; then
   log "entering nix shell with prefetch tools from ${_nixpkgs_ref}"
   export UPDATE_SCRIPT_NIX_SHELL_READY=1
   exec nix shell \
-    "${_nixpkgs_ref}#nix-prefetch-github" \
+    "${_nixpkgs_ref}#nix" \
     "${_nixpkgs_ref}#prefetch-npm-deps" \
     "${_nixpkgs_ref}#curl" \
     "${_nixpkgs_ref}#jq" \
@@ -165,11 +165,15 @@ prefetch_fetchzip_hash() {
   esac
 }
 
-# Compute the fetchFromGitHub SRI hash for owner/repo at rev.
+# Compute the fetchFromGitHub SRI hash for owner/repo at rev using the
+# same GitHub archive tarball + unpack flow as fetchzip/fetchFromGitHub.
+# This avoids `nix-prefetch-github`, whose legacy helper chain is brittle
+# on GitHub runners.
 prefetch_github_hash() {
   local owner="$1" repo="$2" rev="$3"
+  local url="https://github.com/${owner}/${repo}/archive/${rev}.tar.gz"
   local out
-  out=$(nix-prefetch-github "$owner" "$repo" --rev "$rev") \
+  out=$(nix store prefetch-file --json --unpack --hash-type sha256 "$url") \
     || die "prefetch failed for github ${owner}/${repo}@${rev}"
   printf '%s' "$out" | jq -r '.hash'
 }

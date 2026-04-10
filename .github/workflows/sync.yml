@@ -35,8 +35,8 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config user.name  "nix-playwright-nightly[bot]"
-          git config user.email "nix-playwright-nightly[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       # Each tool runs its own backfill. If any step fails we stop and let
       # a human investigate before more versions accumulate. Order matters
