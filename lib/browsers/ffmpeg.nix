@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Only x86_64-linux and aarch64-linux are supported.
+#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
 {
   stdenv,
   fetchzip,
@@ -21,6 +21,7 @@ let
     {
       x86_64-linux = "linux";
       aarch64-linux = "linux-arm64";
+      aarch64-darwin = "mac-arm64";
     }
     .${system} or throwSystem;
 in

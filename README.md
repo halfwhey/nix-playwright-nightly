@@ -2,7 +2,7 @@
 
 Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
-Supported systems: `x86_64-linux`, `aarch64-linux`.
+Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
 
 ## Why
 
@@ -156,6 +156,15 @@ nix build \
     'halfwhey.cachix.org-1:6PtY2HXdJg8gVVe/uyWGqeWXg1cjfQEIi514Gsk4EeI=' \
   github:halfwhey/nix-playwright-nightly#playwright-cli
 ```
+
+Current cache coverage:
+- `x86_64-linux` via `ubuntu-latest`
+- `aarch64-linux` via `ubuntu-24.04-arm`
+- `aarch64-darwin` via `macos-15`
+
+Darwin note: Playwright's WebKit archives are macOS-version-specific upstream,
+so the current `aarch64-darwin` cache is built against the macOS 15 arm64
+runner image.
 
 ## Manual bumps
 

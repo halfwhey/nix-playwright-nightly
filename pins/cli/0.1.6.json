@@ -11,7 +11,8 @@
       "browserVersion": "147.0.7727.49",
       "hashes": {
         "x86_64-linux": "sha256-BJXebvqeiojzoeSNx91nQpZrqJZXDcTDDvxkeguCt04=",
-        "aarch64-linux": "sha256-jsesQ6juzMPQzmn0Ygb8hmpxCeLHJVBL89qto5yuh5s="
+        "aarch64-linux": "sha256-jsesQ6juzMPQzmn0Ygb8hmpxCeLHJVBL89qto5yuh5s=",
+        "aarch64-darwin": "sha256-jmtzueGUZpf0PhscVoObGhW6p+VaOyblhmTTgjmpfSI="
       }
     },
     "chromium-headless-shell": {
@@ -19,7 +20,8 @@
       "browserVersion": "147.0.7727.49",
       "hashes": {
         "x86_64-linux": "sha256-TFl6NyEqmwXmnLfwpH1CO266tj3qlZowGqykpl4ppS8=",
-        "aarch64-linux": "sha256-s2IIjSY5t9AtT05dUS0mp4fPlaixND9+Cg0+0S8Kkx8="
+        "aarch64-linux": "sha256-s2IIjSY5t9AtT05dUS0mp4fPlaixND9+Cg0+0S8Kkx8=",
+        "aarch64-darwin": "sha256-8JLUCkJJzaqq2TvzVqDGLcT+647Uv+oMdNbaEpcFFoA="
       }
     },
     "firefox": {
@@ -27,7 +29,8 @@
       "browserVersion": "148.0.2",
       "hashes": {
         "x86_64-linux": "sha256-vbFI+7y3zayi5HmR1cTHPbcFCi6bvF3OVoAu8MygyEo=",
-        "aarch64-linux": "sha256-7+C3fsIRVo4pfFOPgN7gD0P+fxC6juTMaTzjthq+mno="
+        "aarch64-linux": "sha256-7+C3fsIRVo4pfFOPgN7gD0P+fxC6juTMaTzjthq+mno=",
+        "aarch64-darwin": "sha256-WEYhmqGhGvO47i/OICJgXyqj64Wt52juJDEe7nD7HXU="
       }
     },
     "webkit": {
@@ -35,14 +38,16 @@
       "browserVersion": "26.4",
       "hashes": {
         "x86_64-linux": "sha256-3nkRmDMYyjYZEcl1wZCEvqq5i9bVrYHVZunrDcnGEis=",
-        "aarch64-linux": "sha256-cmtY8869luovZnP5rWPcWXzz8g35PV//yWu1vW0PLVg="
+        "aarch64-linux": "sha256-cmtY8869luovZnP5rWPcWXzz8g35PV//yWu1vW0PLVg=",
+        "aarch64-darwin": "sha256-4w/0z0jjdkTspk6MK1V1jfqpLdWzqFeaU5G5gcpQVZU="
       }
     },
     "ffmpeg": {
       "revision": "1011",
       "hashes": {
         "x86_64-linux": "sha256-AWTiui+ccKHxsIaQSgc5gWCJT5gYwIWzAEqSuKgVqZU=",
-        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q="
+        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q=",
+        "aarch64-darwin": "sha256-ky10UQj+XPVGpaWAPvKd51C5brml0y9xQ6iKcrxAMRc="
       }
     }
   }

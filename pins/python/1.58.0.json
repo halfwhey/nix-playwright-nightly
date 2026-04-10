@@ -5,7 +5,8 @@
   "srcHash": "sha256-gK19pjB8TDy/kK+fb4pjwlGZlUyY26p+CNxunvIMrrY=",
   "driverHashes": {
     "x86_64-linux": "sha256-lQyIqzOu7mCFSorqOhfxjfVBE1mU0AauEJYdjLZAbnA=",
-    "aarch64-linux": "sha256-2jruwid/7zW1o+FbO2P7pUgGUNIPu+wCUbVUBqnIb0M="
+    "aarch64-linux": "sha256-2jruwid/7zW1o+FbO2P7pUgGUNIPu+wCUbVUBqnIb0M=",
+    "aarch64-darwin": "sha256-N8+/2jkWP1zKOtGujKegX11PgpYJq2HB/gHwfRegwPI="
   },
   "browsers": {
     "chromium": {
@@ -13,7 +14,8 @@
       "browserVersion": "145.0.7632.6",
       "hashes": {
         "x86_64-linux": "sha256-dJSO05xOzlSl/EwOWNQCeuSb+lhUU6NlGBnRu59irnM=",
-        "aarch64-linux": "sha256-9DFLCPuc9WZjYLzlRW+Df2pb+mViPK3/IOkkUozELsw="
+        "aarch64-linux": "sha256-9DFLCPuc9WZjYLzlRW+Df2pb+mViPK3/IOkkUozELsw=",
+        "aarch64-darwin": "sha256-qXdgHeBS5IFIa4hZVmjq0+31v/uDPXHyc4aH7Wn2E7E="
       }
     },
     "chromium-headless-shell": {
@@ -21,7 +23,8 @@
       "browserVersion": "145.0.7632.6",
       "hashes": {
         "x86_64-linux": "sha256-/xskLzTc9tTZmu1lwkMpjV3QV7XjP92D/7zRcFuVWT8=",
-        "aarch64-linux": "sha256-jckH5+eGJ4BhH1NAa5LIgf3/salKLAHW9XUOo5gob4c="
+        "aarch64-linux": "sha256-jckH5+eGJ4BhH1NAa5LIgf3/salKLAHW9XUOo5gob4c=",
+        "aarch64-darwin": "sha256-45DjMIu0t7IEYdXOmIqpV/1/MKdEfx/8T7DWagh6Zhc="
       }
     },
     "firefox": {
@@ -29,7 +32,8 @@
       "browserVersion": "146.0.1",
       "hashes": {
         "x86_64-linux": "sha256-HBmCV6AFdQ2qTuCIa7WaCiSHU8Am7S+xhpmEWU6DL/U=",
-        "aarch64-linux": "sha256-peP032z4GOoUp1WAszvzyeXnROw6RwRffG+KRe1Qf9k="
+        "aarch64-linux": "sha256-peP032z4GOoUp1WAszvzyeXnROw6RwRffG+KRe1Qf9k=",
+        "aarch64-darwin": "sha256-ZFRmtlNrzrjB3ELXmGC67XO1IhfWsWZ7rXaUQ6If65s="
       }
     },
     "webkit": {
@@ -37,14 +41,16 @@
       "browserVersion": "26.0",
       "hashes": {
         "x86_64-linux": "sha256-h9dM6RR5WhUPHdZgn5yiJlM7QrhlDVaivnaHQCEZbXQ=",
-        "aarch64-linux": "sha256-sOtPdOBmPLqApGGVhgH51OW3aoTv1Y40RfCSax7CyC4="
+        "aarch64-linux": "sha256-sOtPdOBmPLqApGGVhgH51OW3aoTv1Y40RfCSax7CyC4=",
+        "aarch64-darwin": "sha256-suXPCuXLMz3xoFxE5+Yjd9OXxLfNDDJiU6O1Ic0PsOI="
       }
     },
     "ffmpeg": {
       "revision": "1011",
       "hashes": {
         "x86_64-linux": "sha256-AWTiui+ccKHxsIaQSgc5gWCJT5gYwIWzAEqSuKgVqZU=",
-        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q="
+        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q=",
+        "aarch64-darwin": "sha256-ky10UQj+XPVGpaWAPvKd51C5brml0y9xQ6iKcrxAMRc="
       }
     }
   }

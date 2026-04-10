@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Only x86_64-linux and aarch64-linux are supported.
+#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
 {
   lib,
   stdenv,
@@ -67,6 +67,7 @@ let
     {
       x86_64-linux = "ubuntu-22.04";
       aarch64-linux = "ubuntu-22.04-arm64";
+      aarch64-darwin = "mac-15-arm64";
     }
     .${system} or throwSystem;
 
@@ -136,6 +137,21 @@ let
     }
   );
 in
+if stdenv.hostPlatform.isDarwin then
+  stdenv.mkDerivation {
+    name = "playwright-webkit-${revision}";
+
+    src = fetchzip {
+      url = "https://cdn.playwright.dev/builds/webkit/${revision}/webkit-${archSuffix}.zip";
+      stripRoot = false;
+      hash = hashes.${system} or throwSystem;
+    };
+
+    buildPhase = ''
+      cp -R . $out
+    '';
+  }
+else
 stdenv.mkDerivation {
   name = "playwright-webkit-${revision}";
 

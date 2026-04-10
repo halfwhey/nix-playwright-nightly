@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Only x86_64-linux and aarch64-linux are supported.
+#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
 {
   stdenv,
   lib,
@@ -50,14 +50,17 @@ let
   inherit (stdenv.hostPlatform) system;
   throwSystem = throw "playwright-browsers/chromium: unsupported system ${system}";
 
-  # CDN URL structure differs by arch:
+  # CDN URL structure differs by platform:
   #   x86_64-linux uses Google's chrome-for-testing (CFT) path keyed by browserVersion.
   #   aarch64-linux uses playwright's own builds keyed by revision.
+  #   aarch64-darwin uses CFT again, but with the macOS arm64 archive layout.
   src = fetchzip {
+    stripRoot = !stdenv.hostPlatform.isDarwin;
     url =
       {
         x86_64-linux = "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux64/chrome-linux64.zip";
         aarch64-linux = "https://cdn.playwright.dev/builds/chromium/${revision}/chromium-linux-arm64.zip";
+        aarch64-darwin = "https://cdn.playwright.dev/builds/cft/${browserVersion}/mac-arm64/chrome-mac-arm64.zip";
       }
       .${system} or throwSystem;
     hash = hashes.${system} or throwSystem;
@@ -73,6 +76,7 @@ let
     {
       x86_64-linux = "chrome-linux64";
       aarch64-linux = "chrome-linux";
+      aarch64-darwin = "chrome-mac-arm64";
     }
     .${system} or throwSystem;
 in
@@ -81,13 +85,13 @@ stdenv.mkDerivation {
 
   inherit src;
 
-  nativeBuildInputs = [
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     autoPatchelfHook
     patchelf
     makeWrapper
   ];
 
-  buildInputs = [
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     alsa-lib
     at-spi2-atk
     atk
@@ -117,23 +121,28 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p "$out/${layoutDir}"
-    cp -R . "$out/${layoutDir}"
+    if [ "${toString stdenv.hostPlatform.isDarwin}" = 1 ]; then
+      mkdir -p "$out"
+      cp -R . "$out/"
+    else
+      mkdir -p "$out/${layoutDir}"
+      cp -R . "$out/${layoutDir}"
 
-    wrapProgram "$out/${layoutDir}/chrome" \
-      --set-default SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt \
-      --set-default FONTCONFIG_FILE ${fontconfig_file}
+      wrapProgram "$out/${layoutDir}/chrome" \
+        --set-default SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt \
+        --set-default FONTCONFIG_FILE ${fontconfig_file}
+    fi
 
     runHook postInstall
   '';
 
-  appendRunpaths = lib.makeLibraryPath [
+  appendRunpaths = lib.optionalString stdenv.hostPlatform.isLinux (lib.makeLibraryPath [
     libGL
     vulkan-loader
     pciutils
-  ];
+  ]);
 
-  postFixup = ''
+  postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
     # Replace the bundled vulkan-loader with the one we already add to RPATH.
     if [ -e "$out/${layoutDir}/libvulkan.so.1" ]; then
       rm "$out/${layoutDir}/libvulkan.so.1"

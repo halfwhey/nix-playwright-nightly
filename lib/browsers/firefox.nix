@@ -4,8 +4,9 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Only x86_64-linux and aarch64-linux are supported.
+#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
 {
+  lib,
   stdenv,
   fetchzip,
   firefox-bin,
@@ -22,6 +23,7 @@ let
     {
       x86_64-linux = "ubuntu-22.04";
       aarch64-linux = "ubuntu-22.04-arm64";
+      aarch64-darwin = "mac-arm64";
     }
     .${system} or throwSystem;
 in
@@ -30,19 +32,22 @@ stdenv.mkDerivation {
 
   src = fetchzip {
     url = "https://cdn.playwright.dev/builds/firefox/${revision}/firefox-${archSuffix}.zip";
+    stripRoot = !stdenv.hostPlatform.isDarwin;
     hash = hashes.${system} or throwSystem;
   };
 
-  inherit (firefox-bin.unwrapped)
-    nativeBuildInputs
-    buildInputs
-    runtimeDependencies
-    appendRunpaths
-    patchelfFlags
-    ;
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux firefox-bin.unwrapped.nativeBuildInputs;
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux firefox-bin.unwrapped.buildInputs;
+  runtimeDependencies = lib.optionals stdenv.hostPlatform.isLinux firefox-bin.unwrapped.runtimeDependencies;
+  appendRunpaths = lib.optionalString stdenv.hostPlatform.isLinux firefox-bin.unwrapped.appendRunpaths;
+  patchelfFlags = lib.optionals stdenv.hostPlatform.isLinux firefox-bin.unwrapped.patchelfFlags;
 
   buildPhase = ''
-    mkdir -p $out/firefox
-    cp -R . $out/firefox
+    if [ "${toString stdenv.hostPlatform.isDarwin}" = 1 ]; then
+      cp -R . $out
+    else
+      mkdir -p $out/firefox
+      cp -R . $out/firefox
+    fi
   '';
 }

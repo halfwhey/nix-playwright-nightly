@@ -12,12 +12,13 @@
       nixpkgs,
       flake-utils,
     }:
-    # Linux only. CDN URL patterns, patchelfHooks, and prefetched hashes in
-    # each pin file assume Linux (ubuntu-22.04 archives) on x86_64 or aarch64.
+    # Linux plus Apple Silicon macOS. Darwin browser archives are currently
+    # pinned against the GitHub Actions macOS 15 arm64 runner image.
     flake-utils.lib.eachSystem
       [
         "x86_64-linux"
         "aarch64-linux"
+        "aarch64-darwin"
       ]
       (
         system:

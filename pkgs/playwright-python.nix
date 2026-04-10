@@ -27,6 +27,7 @@ let
     {
       x86_64-linux = "linux";
       aarch64-linux = "linux-arm64";
+      aarch64-darwin = "mac-arm64";
     }
     .${system} or throwSystem;
 
@@ -45,8 +46,8 @@ let
       hash = driverHashes.${system} or throwSystem;
     };
 
-    nativeBuildInputs = [ autoPatchelfHook ];
-    buildInputs = [ stdenv.cc.cc.lib ];
+    nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
+    buildInputs = lib.optionals stdenv.hostPlatform.isLinux [ stdenv.cc.cc.lib ];
     dontStrip = true;
 
     installPhase = ''

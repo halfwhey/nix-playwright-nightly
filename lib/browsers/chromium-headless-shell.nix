@@ -4,8 +4,9 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Only x86_64-linux and aarch64-linux are supported.
+#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
 {
+  lib,
   stdenv,
   fetchzip,
   autoPatchelfHook,
@@ -39,6 +40,7 @@ let
       {
         x86_64-linux = "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux64/chrome-headless-shell-linux64.zip";
         aarch64-linux = "https://cdn.playwright.dev/builds/chromium/${revision}/chromium-headless-shell-linux-arm64.zip";
+        aarch64-darwin = "https://cdn.playwright.dev/builds/cft/${browserVersion}/mac-arm64/chrome-headless-shell-mac-arm64.zip";
       }
       .${system} or throwSystem;
     stripRoot = false;
@@ -50,12 +52,12 @@ stdenv.mkDerivation {
 
   inherit src;
 
-  nativeBuildInputs = [
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     autoPatchelfHook
     patchelfUnstable
   ];
 
-  buildInputs = [
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     alsa-lib
     at-spi2-atk
     expat
@@ -74,6 +76,7 @@ stdenv.mkDerivation {
   # Layout notes (playwright-core/src/server/registry/index.ts):
   #   linux-x64:   chrome-headless-shell-linux64/chrome-headless-shell
   #   linux-arm64: chrome-linux/headless_shell
+  #   mac-arm64:   chrome-headless-shell-mac-arm64/chrome-headless-shell
   # Both zips already contain the expected top-level directory (stripRoot=false),
   # so a straight copy is all that's needed.
   buildPhase = ''
