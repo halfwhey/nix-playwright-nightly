@@ -22,14 +22,14 @@ case "$TOOL" in
     log "fetching npm registry metadata for ${pkg_name}"
     meta=$(curl -fsSL "https://registry.npmjs.org/${pkg_name}")
     # jq: pair each version with its publish time, drop dist-tag aliases,
-    # sort by time ascending.
+    # sort by time ascending. Emits <version><TAB><time> per line.
     all_versions=$(printf '%s' "$meta" | jq -r '
       .versions as $v
       | .time
       | to_entries
       | map(select(.key as $k | $v | has($k)))
       | sort_by(.value)
-      | .[].key
+      | .[] | "\(.key)\t\(.value)"
     ')
     ;;
   python)
@@ -41,7 +41,7 @@ case "$TOOL" in
       | map(select(.value | length > 0))
       | map({version: .key, time: .value[0].upload_time})
       | sort_by(.time)
-      | .[].version
+      | .[] | "\(.version)\t\(.time)"
     ')
     ;;
   *)
@@ -60,13 +60,36 @@ if [ -f "$manifest_file" ]; then
   existing=$(jq -r --arg tool "$TOOL" '.[$tool].versions[]? // empty' "$manifest_file")
 fi
 
-# Compute missing = all \ existing, preserving chronological order of `all`.
-missing=$(printf '%s\n' "$all_versions" | awk -v ex="$existing" '
+if [ -z "$existing" ]; then
+  die "no existing ${TOOL} pins in pins/pin.json — refusing to backfill from scratch. Seed the repo manually with at least one version before running the sync workflow."
+fi
+
+# Find the publish time of the newest version we already have (the
+# watermark). Only consider registry versions published strictly AFTER
+# the watermark as missing — we never reach backward to pick up older
+# versions that were published before our initial seed.
+watermark=$(printf '%s\n' "$all_versions" | awk -F'\t' -v ex="$existing" '
   BEGIN {
     n = split(ex, a, "\n")
     for (i = 1; i <= n; i++) seen[a[i]] = 1
   }
-  { if (!seen[$0]) print $0 }
+  { if (seen[$1] && $2 > max) max = $2 }
+  END { print max }
+')
+
+if [ -z "$watermark" ]; then
+  die "could not find any of the existing ${TOOL} pins in the registry (registry lost our versions?)"
+fi
+log "watermark: newest existing ${TOOL} pin was published at ${watermark}"
+
+# Compute missing = versions published after the watermark and not
+# already in `existing`. Preserve chronological order from `all_versions`.
+missing=$(printf '%s\n' "$all_versions" | awk -F'\t' -v ex="$existing" -v wm="$watermark" '
+  BEGIN {
+    n = split(ex, a, "\n")
+    for (i = 1; i <= n; i++) seen[a[i]] = 1
+  }
+  { if ($2 > wm && !seen[$1]) print $1 }
 ')
 
 if [ -z "$missing" ]; then
