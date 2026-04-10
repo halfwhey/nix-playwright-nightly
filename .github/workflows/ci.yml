@@ -35,5 +35,8 @@ jobs:
       - name: Smoke test playwright-mcp
         run: nix run --no-write-lock-file .#playwright-mcp -- --version
 
+      - name: Smoke test playwright-node
+        run: nix run --no-write-lock-file .#playwright-node -- --version
+
       - name: Smoke test playwright-python
         run: nix run --no-write-lock-file .#playwright-python -- --version

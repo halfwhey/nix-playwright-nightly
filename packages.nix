@@ -15,6 +15,12 @@ let
     browsers = mkBrowsers pin.browsers;
   };
 
+  mkNode = pin: pkgs.callPackage ./pkgs/playwright-node.nix { } {
+    version = pin.package;
+    inherit (pin) packageHash coreHash;
+    browsers = mkBrowsers pin.browsers;
+  };
+
   mkPython = pin: pkgs.callPackage ./pkgs/playwright-python.nix { } {
     version = pin.package;
     inherit (pin) srcHash driverHashes;
@@ -72,6 +78,13 @@ let
     mk = mkMcp;
   };
 
+  nodeOutputs = buildTool {
+    prefix = "playwright-node";
+    toolManifest = pins.node;
+    pinDir = ./pins/node;
+    mk = mkNode;
+  };
+
   pythonOutputs = buildTool {
     prefix = "playwright-python";
     toolManifest = pins.python;
@@ -81,6 +94,7 @@ let
 in
 cliOutputs
 // mcpOutputs
+// nodeOutputs
 // pythonOutputs
 // {
   default = cliOutputs."playwright-cli";

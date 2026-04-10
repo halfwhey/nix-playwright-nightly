@@ -1,20 +1,21 @@
 # nix-playwright-nightly
 
-Nix flake packaging `@playwright/cli`, `@playwright/mcp`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
+Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
 Supported systems: `x86_64-linux`, `aarch64-linux`.
 
 ## Why
 
-`@playwright/cli`, `@playwright/mcp`, and PyPI `playwright` release independently and regularly pin different `playwright-core` versions at the same moment. nixpkgs's `playwright-driver.browsers` almost never matches any of them. This flake builds a separate browser set per consumer and bakes the right one into each wrapper.
+`@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, and PyPI `playwright` release independently and regularly pin different `playwright-core` versions at the same moment. nixpkgs's `playwright-driver.browsers` almost never matches any of them. This flake builds a separate browser set per consumer and bakes the right one into each wrapper.
 
 Traced 2026-04-06:
 
-| Consumer           | Latest | playwright-core pinned         | chromium | webkit |
-| ------------------ | ------ | ------------------------------ | -------- | ------ |
-| `@playwright/cli`  | 0.1.5  | 1.60.0-alpha-1775237291000     | 1219     | 2276   |
-| `@playwright/mcp`  | 0.0.70 | 1.60.0-alpha-1774999321000     | 1217     | 2272   |
-| pypi `playwright`  | 1.58.0 | 1.58.0 (separate repo)         | 1208     | 2248   |
+| Consumer            | Latest | playwright-core pinned         | chromium | webkit |
+| ------------------- | ------ | ------------------------------ | -------- | ------ |
+| `@playwright/cli`   | 0.1.6  | 1.60.0-alpha-1775584683000     | 1219     | 2276   |
+| `@playwright/mcp`   | 0.0.70 | 1.60.0-alpha-1774999321000     | 1217     | 2272   |
+| node `playwright`   | 1.59.1 | 1.59.1                         | 1217     | 2272   |
+| PyPI `playwright`   | 1.58.0 | 1.58.0 (separate repo)         | 1208     | 2248   |
 
 ## Usage
 
@@ -58,6 +59,23 @@ Use as an MCP server:
 }
 ```
 
+### Node.js `playwright`
+
+The package attribute is `playwright-node`, and the wrapped executable is also
+named `playwright-node` to avoid colliding with PyPI `playwright`'s
+`playwright` executable. When used as a shell package or build input, it also
+adds its module tree to `NODE_PATH` so plain `node` can `require("playwright")`.
+
+```nix
+playwright.packages.${system}.playwright-node         # latest
+playwright.packages.${system}.playwright-node-1_59_1  # pinned
+```
+
+```sh
+$ playwright-node --version
+$ node -e "const { chromium } = require('playwright'); console.log(typeof chromium)"
+```
+
 ### PyPI `playwright`
 
 ```nix
@@ -77,6 +95,7 @@ For derivations that embed playwright and manage `PLAYWRIGHT_BROWSERS_PATH` them
 ```nix
 playwright.packages.${system}.playwright-cli-browsers              # latest
 playwright.packages.${system}.playwright-mcp-0_0_70-browsers      # pinned
+playwright.packages.${system}.playwright-node-1_59_1-browsers     # pinned
 playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 ```
 
@@ -96,6 +115,7 @@ playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
           packages = [
             playwright.packages.${system}.playwright-cli
             playwright.packages.${system}.playwright-mcp-0_0_70
+            playwright.packages.${system}.playwright-node
             playwright.packages.${system}.playwright-python-1_58_0
           ];
         };
@@ -107,6 +127,7 @@ playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 $ nix develop
 $ playwright-cli open --browser=chromium https://example.com
 $ playwright-mcp --version
+$ playwright-node --version
 $ playwright --version
 ```
 
@@ -149,6 +170,7 @@ nix build \
 ./scripts/update-cli.sh          # bump cli to latest on npm
 ./scripts/update-cli.sh 0.1.4    # bump cli to a specific version
 ./scripts/update-mcp.sh          # bump mcp to latest on npm
+./scripts/update-node.sh         # bump node playwright to latest on npm
 ./scripts/update-python.sh       # bump python to latest on PyPI
 ```
 
@@ -160,4 +182,3 @@ CI runs the same update flow once a day. See `.github/workflows/sync.yml`.
 
 - Per-browser fetchers under `lib/browsers/` are adapted from [`pietdevries94/playwright-web-flake`](https://github.com/pietdevries94/playwright-web-flake).
 - Thank you Cachix for hosting my binary cache for free.
-

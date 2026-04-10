@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ./scripts/backfill.sh <cli|mcp|python>
+# Usage: ./scripts/backfill.sh <cli|mcp|node|python>
 #
 # Enumerate every version published for <tool>, diff against pins/pin.json
 # (the .versions array under the tool's key), and run scripts/update-<tool>.sh for each
@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-TOOL="${1:?tool argument required: cli|mcp|python}"
+TOOL="${1:?tool argument required: cli|mcp|node|python}"
 FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$FLAKE_ROOT"
 
@@ -32,6 +32,19 @@ case "$TOOL" in
       | .[] | "\(.key)\t\(.value)"
     ')
     ;;
+  node)
+    pkg_name="playwright"
+    log "fetching npm registry metadata for ${pkg_name}"
+    meta=$(curl -fsSL "https://registry.npmjs.org/${pkg_name}")
+    all_versions=$(printf '%s' "$meta" | jq -r '
+      .versions as $v
+      | .time
+      | to_entries
+      | map(select(.key as $k | $v | has($k)))
+      | sort_by(.value)
+      | .[] | "\(.key)\t\(.value)"
+    ')
+    ;;
   python)
     log "fetching PyPI metadata for playwright"
     meta=$(curl -fsSL "https://pypi.org/pypi/playwright/json")
@@ -45,7 +58,7 @@ case "$TOOL" in
     ')
     ;;
   *)
-    die "unknown tool: $TOOL (expected cli|mcp|python)"
+    die "unknown tool: $TOOL (expected cli|mcp|node|python)"
     ;;
 esac
 

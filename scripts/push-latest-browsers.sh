@@ -31,4 +31,5 @@ push_and_pin() {
 
 push_and_pin "playwright-cli-browsers-${SYSTEM}" ".#playwright-cli-browsers"
 push_and_pin "playwright-mcp-browsers-${SYSTEM}" ".#playwright-mcp-browsers"
+push_and_pin "playwright-node-browsers-${SYSTEM}" ".#playwright-node-browsers"
 push_and_pin "playwright-python-browsers-${SYSTEM}" ".#playwright-python-browsers"

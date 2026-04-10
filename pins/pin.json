@@ -7,6 +7,10 @@
     "latest": "0.0.70",
     "versions": ["0.0.70"]
   },
+  "node": {
+    "latest": "1.59.1",
+    "versions": ["1.59.1"]
+  },
   "python": {
     "latest": "1.58.0",
     "versions": ["1.58.0"]
