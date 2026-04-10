@@ -24,7 +24,7 @@ push_and_pin() {
   log "building ${attr}"
   path=$(nix build --no-link --print-out-paths "$attr")
   log "pushing runtime closure for ${pin_name}"
-  printf '%s\n' "$path" | cachix push "$CACHE_NAME"
+  nix path-info -r "$path" | cachix push "$CACHE_NAME"
   log "pinning ${pin_name} -> ${path}"
   cachix pin "$CACHE_NAME" "$pin_name" "$path" --keep-revisions "$KEEP_REVISIONS"
 }
