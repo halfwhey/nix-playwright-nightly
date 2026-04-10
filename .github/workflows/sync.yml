@@ -41,20 +41,20 @@ jobs:
 
       # Update each tool to the current upstream latest only. If any step
       # fails we stop and let a human investigate.
-      # - name: Update cli
-      #   run: ./scripts/update-cli.sh
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update cli
+        run: ./scripts/update-cli.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update mcp
         run: ./scripts/update-mcp.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-     #
-      # - name: Update python
-      #   run: ./scripts/update-python.sh
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update python
+        run: ./scripts/update-python.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push and pin latest browser closures
         run: ./scripts/push-latest-browsers.sh halfwhey 1

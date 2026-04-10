@@ -9,6 +9,7 @@ set -euo pipefail
 CACHE_NAME="${1:?cache name required}"
 KEEP_REVISIONS="${2:-1}"
 FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SYSTEM="$(nix eval --raw --impure --expr builtins.currentSystem)"
 
 log() { printf '[cachix:latest-browsers] %s\n' "$*" >&2; }
 die() { log "ERROR: $*"; exit 1; }
@@ -28,6 +29,6 @@ push_and_pin() {
   cachix pin "$CACHE_NAME" "$pin_name" "$path" --keep-revisions "$KEEP_REVISIONS"
 }
 
-push_and_pin "playwright-cli-browsers" ".#playwright-cli-browsers"
-push_and_pin "playwright-mcp-browsers" ".#playwright-mcp-browsers"
-push_and_pin "playwright-python-browsers" ".#playwright-python-browsers"
+push_and_pin "playwright-cli-browsers-${SYSTEM}" ".#playwright-cli-browsers"
+push_and_pin "playwright-mcp-browsers-${SYSTEM}" ".#playwright-mcp-browsers"
+push_and_pin "playwright-python-browsers-${SYSTEM}" ".#playwright-python-browsers"
