@@ -172,6 +172,7 @@ Each file holds the data needed to build one version of one tool:
 ```json
 {
   "package": "0.1.5",
+  "packageSha": "a0d5bfd4d9658073029d33f979ac5a027568caec",
   "playwrightVersion": "1.60.0-alpha-1775237291000",
   "playwrightSha": "87b2074de5cccbde1c0c7b2be67d021d6acdedfe",
   "srcHash": "sha256-...",
@@ -189,7 +190,7 @@ Each file holds the data needed to build one version of one tool:
 }
 ```
 
-`chromium-headless-shell`, `firefox`, `webkit`, and `ffmpeg` entries share the same shape (`ffmpeg` has no `browserVersion`). `pins/mcp/<v>.json` is structurally identical. `pins/python/<v>.json` replaces `npmDepsHash` with `driverHashes: { "x86_64-linux": "…", "aarch64-linux": "…" }` for the embedded JS driver tarball; everything else is the same.
+`packageSha` is the npm `gitHead` commit SHA for the tool's own repo; `fetchFromGitHub` uses it as `rev` instead of a version tag because pre-release alphas are published without tags. `chromium-headless-shell`, `firefox`, `webkit`, and `ffmpeg` entries share the same shape (`ffmpeg` has no `browserVersion`). `pins/mcp/<v>.json` is structurally identical. `pins/python/<v>.json` omits `packageSha` (it resolves `playwrightSha` via `setup.py` → npm instead) and replaces `npmDepsHash` with `driverHashes: { "x86_64-linux": "…", "aarch64-linux": "…" }` for the embedded JS driver tarball; everything else is the same.
 
 ### `packages.nix`
 

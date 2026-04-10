@@ -168,9 +168,10 @@ prefetch_fetchzip_hash() {
 # Compute the fetchFromGitHub SRI hash for owner/repo at rev.
 prefetch_github_hash() {
   local owner="$1" repo="$2" rev="$3"
-  nix-prefetch-github "$owner" "$repo" --rev "$rev" 2>/dev/null \
-    | jq -r '.hash' \
+  local out
+  out=$(nix-prefetch-github "$owner" "$repo" --rev "$rev") \
     || die "prefetch failed for github ${owner}/${repo}@${rev}"
+  printf '%s' "$out" | jq -r '.hash'
 }
 
 # Compute npmDepsHash by fetching the upstream package-lock.json from

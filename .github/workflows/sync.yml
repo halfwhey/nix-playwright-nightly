@@ -28,6 +28,11 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
+      - uses: cachix/cachix-action@v15
+        with:
+          name: halfwhey
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
       - name: Configure git identity
         run: |
           git config user.name  "nix-playwright-nightly[bot]"
@@ -39,12 +44,18 @@ jobs:
       # backfill will respect.
       - name: Backfill cli
         run: ./scripts/backfill.sh cli
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Backfill mcp
         run: ./scripts/backfill.sh mcp
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Backfill python
         run: ./scripts/backfill.sh python
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push commits
         run: git push origin HEAD:main
