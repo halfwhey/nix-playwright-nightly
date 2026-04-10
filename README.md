@@ -43,6 +43,47 @@ Pin `main` once and pick the version per tool via the package attribute name:
 }
 ```
 
+List available versions:
+
+
+```bash 
+❯ nix flake show github:halfwhey/nix-playwright-nightly
+github:halfwhey/nix-playwright-nightly/e4c4cc73a33bdcb7e9dfcec629d2bbdf72d9fe4c?narHash=sha256-E7QaKOo/LIlyBufQBsoaxtJLEqtRkyLuS%2Btd/vJClAM%3D
+└───packages
+    ├───aarch64-linux
+    │   ├───default: package 'playwright-cli-0.1.6'
+    │   ├───playwright-cli: package 'playwright-cli-0.1.6'
+    │   ├───playwright-cli-0_1_5: package 'playwright-cli-0.1.5'
+    │   ├───playwright-cli-0_1_5-browsers: package 'playwright-browsers'
+    │   ├───playwright-cli-0_1_6: package 'playwright-cli-0.1.6'
+    │   ├───playwright-cli-0_1_6-browsers: package 'playwright-browsers'
+    │   ├───playwright-cli-browsers: package 'playwright-browsers'
+    │   ├───playwright-mcp: package 'playwright-mcp-0.0.70'
+    │   ├───playwright-mcp-0_0_70: package 'playwright-mcp-0.0.70'
+    │   ├───playwright-mcp-0_0_70-browsers: package 'playwright-browsers'
+    │   ├───playwright-mcp-browsers: package 'playwright-browsers'
+    │   ├───playwright-python: package 'python3.13-playwright-1.58.0'
+    │   ├───playwright-python-1_58_0: package 'python3.13-playwright-1.58.0'
+    │   ├───playwright-python-1_58_0-browsers: package 'playwright-browsers'
+    │   └───playwright-python-browsers: package 'playwright-browsers'
+    └───x86_64-linux
+        ├───default omitted (use '--all-systems' to show)
+        ├───playwright-cli omitted (use '--all-systems' to show)
+        ├───playwright-cli-0_1_5 omitted (use '--all-systems' to show)
+        ├───playwright-cli-0_1_5-browsers omitted (use '--all-systems' to show)
+        ├───playwright-cli-0_1_6 omitted (use '--all-systems' to show)
+        ├───playwright-cli-0_1_6-browsers omitted (use '--all-systems' to show)
+        ├───playwright-cli-browsers omitted (use '--all-systems' to show)
+        ├───playwright-mcp omitted (use '--all-systems' to show)
+        ├───playwright-mcp-0_0_70 omitted (use '--all-systems' to show)
+        ├───playwright-mcp-0_0_70-browsers omitted (use '--all-systems' to show)
+        ├───playwright-mcp-browsers omitted (use '--all-systems' to show)
+        ├───playwright-python omitted (use '--all-systems' to show)
+        ├───playwright-python-1_58_0 omitted (use '--all-systems' to show)
+        ├───playwright-python-1_58_0-browsers omitted (use '--all-systems' to show)
+        └───playwright-python-browsers omitted (use '--all-systems' to show)
+```
+
 ```sh
 $ nix develop
 $ playwright-cli --version    # latest cli
