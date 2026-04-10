@@ -2,8 +2,8 @@ name: sync
 
 on:
   schedule:
-    # Once a day at 03:17 UTC. Backfill catches up on every version published
-    # since the last run, so a daily cadence is enough.
+    # Once a day at 03:17 UTC. Each run checks the current upstream latest
+    # for each tool and adds it if it's new.
     - cron: '17 3 * * *'
   workflow_dispatch:
 
@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  backfill:
+  sync-latest:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -32,30 +32,34 @@ jobs:
         with:
           name: halfwhey
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          skipPush: true
 
       - name: Configure git identity
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      # Each tool runs its own backfill. If any step fails we stop and let
-      # a human investigate before more versions accumulate. Order matters
-      # only in that each completed update adds commits that the next tool's
-      # backfill will respect.
-      - name: Backfill cli
-        run: ./scripts/backfill.sh cli
+      # Update each tool to the current upstream latest only. If any step
+      # fails we stop and let a human investigate.
+      - name: Update cli
+        run: ./scripts/update-cli.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Backfill mcp
-        run: ./scripts/backfill.sh mcp
+      - name: Update mcp
+        run: ./scripts/update-mcp.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Backfill python
-        run: ./scripts/backfill.sh python
+      - name: Update python
+        run: ./scripts/update-python.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push and pin latest browser closures
+        run: ./scripts/push-latest-browsers.sh halfwhey 1
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Push commits
         run: git push origin HEAD:main
