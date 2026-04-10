@@ -1,5 +1,7 @@
 # buildNpmPackage wrapper for @playwright/mcp, fetched from
-# microsoft/playwright-mcp at the matching tag and bundled with the
+# microsoft/playwright-mcp at the commit SHA recorded in the pin file
+# (not a version tag — pre-release alphas on npm are often published
+# without a corresponding upstream tag) and bundled with the
 # revision-matched browsers from this flake's mcp pin.
 #
 # microsoft/playwright-mcp v0.0.65+ is an npm workspace; the buildNpmPackage
@@ -12,6 +14,7 @@
 }:
 {
   version,
+  packageSha,
   srcHash,
   npmDepsHash,
   browsers,
@@ -23,7 +26,7 @@ buildNpmPackage {
   src = fetchFromGitHub {
     owner = "microsoft";
     repo = "playwright-mcp";
-    rev = "v${version}";
+    rev = packageSha;
     hash = srcHash;
   };
 

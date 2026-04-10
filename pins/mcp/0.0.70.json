@@ -1,5 +1,6 @@
 {
   "package": "0.0.70",
+  "packageSha": "d21e970b680fe675b0560e128430a76cc6650faf",
   "playwrightVersion": "1.60.0-alpha-1774999321000",
   "playwrightSha": "cec7b21afa00c0f48e46859c683680a2c6e9e029",
   "srcHash": "sha256-dvFFG+/cYy09RjEMDIWncTNCcyaKoKH52qweYq0HHxU=",

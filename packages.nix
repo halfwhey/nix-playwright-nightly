@@ -5,13 +5,13 @@ let
 
   mkCli = pin: pkgs.callPackage ./pkgs/playwright-cli.nix { } {
     version = pin.package;
-    inherit (pin) srcHash npmDepsHash;
+    inherit (pin) packageSha srcHash npmDepsHash;
     browsers = mkBrowsers pin.browsers;
   };
 
   mkMcp = pin: pkgs.callPackage ./pkgs/playwright-mcp.nix { } {
     version = pin.package;
-    inherit (pin) srcHash npmDepsHash;
+    inherit (pin) packageSha srcHash npmDepsHash;
     browsers = mkBrowsers pin.browsers;
   };
 

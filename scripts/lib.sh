@@ -3,6 +3,12 @@
 # Callers must set: TOOL (cli|mcp|python), FLAKE_ROOT (absolute path).
 
 set -euo pipefail
+# By default bash disables `set -e` inside command substitutions, so a
+# `die` deep inside `prefetch_*` would silently leave the caller with an
+# empty hash and the update script would happily write a broken pin file.
+# inherit_errexit propagates errexit into `$(...)` so those failures abort
+# the update script immediately.
+shopt -s inherit_errexit
 
 : "${TOOL:?TOOL must be set by caller}"
 : "${FLAKE_ROOT:?FLAKE_ROOT must be set by caller}"
@@ -10,7 +16,6 @@ set -euo pipefail
 PIN_DIR="${FLAKE_ROOT}/pins/${TOOL}"
 MANIFEST_FILE="${FLAKE_ROOT}/pins/pin.json"
 SUPPORTED_SYSTEMS=(x86_64-linux aarch64-linux)
-DUMMY_HASH="sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 
 log() { printf '[%s] %s\n' "${TOOL}" "$*" >&2; }
 die() { log "ERROR: $*"; exit 1; }
@@ -20,6 +25,29 @@ require_cmd() {
     command -v "$c" >/dev/null 2>&1 || die "missing required command: $c"
   done
 }
+
+# Re-exec the calling update script inside a `nix shell` that provides
+# the prefetch tools we need. We pin nix shell to the exact nixpkgs
+# revision from our own flake.lock so the prefetch tools that compute
+# hashes are byte-identical to the ones `buildNpmPackage` and friends
+# will later consume them with. This keeps the script self-contained:
+# no NIX_PATH, no `import <nixpkgs>`, no CI workflow tweaks required.
+if [ -z "${UPDATE_SCRIPT_NIX_SHELL_READY:-}" ]; then
+  require_cmd nix jq
+  _nixpkgs_rev=$(jq -r '.nodes.nixpkgs.locked.rev' "${FLAKE_ROOT}/flake.lock")
+  [ -n "$_nixpkgs_rev" ] && [ "$_nixpkgs_rev" != "null" ] \
+    || die "could not read nixpkgs rev from ${FLAKE_ROOT}/flake.lock"
+  _nixpkgs_ref="github:NixOS/nixpkgs/${_nixpkgs_rev}"
+  log "entering nix shell with prefetch tools from ${_nixpkgs_ref}"
+  export UPDATE_SCRIPT_NIX_SHELL_READY=1
+  exec nix shell \
+    "${_nixpkgs_ref}#nix-prefetch-github" \
+    "${_nixpkgs_ref}#prefetch-npm-deps" \
+    "${_nixpkgs_ref}#curl" \
+    "${_nixpkgs_ref}#jq" \
+    "${_nixpkgs_ref}#unzip" \
+    -c "$0" "$@"
+fi
 
 # Fetch browsers.json for a given microsoft/playwright commit SHA.
 # Outputs raw JSON on stdout.
@@ -87,7 +115,8 @@ browser_url() {
   esac
 }
 
-# True if the fetcher for this browser uses stripRoot = false.
+# True (exit 0) if the fetcher for this browser uses `stripRoot = false`.
+# Keep this in sync with lib/browsers/*.nix.
 strip_root_false() {
   case "$1" in
     chromium-headless-shell|webkit|ffmpeg) return 0 ;;
@@ -95,80 +124,86 @@ strip_root_false() {
   esac
 }
 
-# Parse a "got: sha256-..." line out of a nix-build error log.
-_parse_got_hash() {
-  awk '/got:[[:space:]]*sha256-/ {print $2; exit}'
-}
-
-# Compute a fetchzip hash for a URL using nix-build with a dummy hash and
-# parsing the "got:" line from the error output. Works for any fetchzip
-# stripRoot setting; pass "true" or "false".
+# Compute a fetchzip-equivalent NAR hash for a URL. `strip` selects
+# between fetchzip's two modes:
+#   "true"  — matches fetchzip { stripRoot = true; } (the default).
+#             `nix-prefetch-url --unpack` always strips the single top-
+#             level directory from an archive, which is what we want.
+#   "false" — matches fetchzip { stripRoot = false; }. We have to
+#             download + unzip + hash the directory ourselves, because
+#             nix-prefetch-url has no "don't strip" flag.
 prefetch_fetchzip_hash() {
   local url="$1" strip="$2"
-  local log
-  log=$(nix-build --no-out-link -E "(import <nixpkgs> {}).fetchzip { url = \"${url}\"; stripRoot = ${strip}; hash = \"${DUMMY_HASH}\"; }" 2>&1 || true)
-  local got
-  got=$(printf '%s\n' "$log" | _parse_got_hash)
-  if [ -z "$got" ]; then
-    printf '%s\n' "$log" | tail -10 >&2
-    die "prefetch failed for $url"
-  fi
-  printf '%s' "$got"
+  case "$strip" in
+    true)
+      local b32
+      b32=$(nix-prefetch-url --unpack "$url" 2>/dev/null) \
+        || die "prefetch failed for $url"
+      nix hash convert --to sri --hash-algo sha256 "$b32"
+      ;;
+    false)
+      local tmpdir archive extract hash
+      tmpdir=$(mktemp -d)
+      archive="${tmpdir}/archive.zip"
+      extract="${tmpdir}/extract"
+      mkdir "$extract"
+      if ! curl -fsSL "$url" -o "$archive"; then
+        rm -rf "$tmpdir"
+        die "fetch failed for $url"
+      fi
+      if ! unzip -q "$archive" -d "$extract"; then
+        rm -rf "$tmpdir"
+        die "unzip failed for $url"
+      fi
+      hash=$(nix hash path --type sha256 --sri "$extract")
+      rm -rf "$tmpdir"
+      printf '%s' "$hash"
+      ;;
+    *)
+      die "prefetch_fetchzip_hash: strip must be true|false, got '$strip'"
+      ;;
+  esac
 }
 
-# Compute the fetchFromGitHub hash for owner/repo at rev.
+# Compute the fetchFromGitHub SRI hash for owner/repo at rev.
 prefetch_github_hash() {
   local owner="$1" repo="$2" rev="$3"
-  local log
-  log=$(nix-build --no-out-link -E "(import <nixpkgs> {}).fetchFromGitHub { owner = \"${owner}\"; repo = \"${repo}\"; rev = \"${rev}\"; hash = \"${DUMMY_HASH}\"; }" 2>&1 || true)
-  local got
-  got=$(printf '%s\n' "$log" | _parse_got_hash)
-  if [ -z "$got" ]; then
-    printf '%s\n' "$log" | tail -10 >&2
-    die "prefetch failed for github ${owner}/${repo}@${rev}"
-  fi
-  printf '%s' "$got"
+  nix-prefetch-github "$owner" "$repo" --rev "$rev" 2>/dev/null \
+    | jq -r '.hash' \
+    || die "prefetch failed for github ${owner}/${repo}@${rev}"
 }
 
-# Compute npmDepsHash by running buildNpmPackage with a dummy hash. Requires
-# the GitHub source hash to already be known so the source can be fetched.
+# Compute npmDepsHash by fetching the upstream package-lock.json from
+# raw.githubusercontent.com and feeding it to nixpkgs' prefetch-npm-deps
+# tool. This is the same tool buildNpmPackage runs internally, so the
+# hash is guaranteed to match.
 prefetch_npm_deps_hash() {
-  local owner="$1" repo="$2" rev="$3" src_hash="$4"
-  local log
-  log=$(nix-build --no-out-link -E "
-    let pkgs = import <nixpkgs> {}; in
-    pkgs.buildNpmPackage {
-      pname = \"${repo}\";
-      version = \"${rev}\";
-      src = pkgs.fetchFromGitHub {
-        owner = \"${owner}\";
-        repo = \"${repo}\";
-        rev = \"${rev}\";
-        hash = \"${src_hash}\";
-      };
-      npmDepsHash = \"${DUMMY_HASH}\";
-      dontNpmBuild = true;
-    }
-  " 2>&1 || true)
-  local got
-  got=$(printf '%s\n' "$log" | _parse_got_hash)
-  if [ -z "$got" ]; then
-    printf '%s\n' "$log" | tail -15 >&2
-    die "prefetch failed for npm deps of ${owner}/${repo}@${rev}"
-  fi
-  printf '%s' "$got"
+  local owner="$1" repo="$2" rev="$3"
+  local lockfile
+  lockfile=$(mktemp)
+  trap 'rm -f "$lockfile"' RETURN
+  curl -fsSL \
+    "https://raw.githubusercontent.com/${owner}/${repo}/${rev}/package-lock.json" \
+    -o "$lockfile" \
+    || die "could not fetch package-lock.json for ${owner}/${repo}@${rev}"
+  prefetch-npm-deps "$lockfile" \
+    || die "prefetch-npm-deps failed for ${owner}/${repo}@${rev}"
 }
 
 # Emit a JSON fragment `{ srcHash, npmDepsHash }` for an npm-based tool.
-# Owner is always microsoft; repo is the github repo name.
+# Owner is always microsoft; `repo` is the github repo name; `rev` is a
+# git commit SHA (we use the npm metadata's `gitHead`, not a version tag,
+# because pre-release / alpha versions of @playwright/cli and
+# @playwright/mcp are published to npm without ever being tagged in the
+# upstream repo).
 emit_npm_pkg_hashes() {
-  local repo="$1" version="$2"
-  log "prefetching ${repo}@${version} src hash"
+  local repo="$1" rev="$2"
+  log "prefetching ${repo}@${rev} src hash"
   local src
-  src=$(prefetch_github_hash "microsoft" "$repo" "v${version}")
-  log "prefetching ${repo}@${version} npmDepsHash"
+  src=$(prefetch_github_hash "microsoft" "$repo" "$rev")
+  log "prefetching ${repo}@${rev} npmDepsHash"
   local npm
-  npm=$(prefetch_npm_deps_hash "microsoft" "$repo" "v${version}" "$src")
+  npm=$(prefetch_npm_deps_hash "microsoft" "$repo" "$rev")
   jq -n --arg src "$src" --arg npm "$npm" \
     '{ srcHash: $src, npmDepsHash: $npm }'
 }
@@ -191,6 +226,7 @@ emit_python_pkg_hashes() {
     esac
     log "prefetching playwright driver tarball for ${sys}"
     local url="https://cdn.playwright.dev/builds/driver/playwright-${version}-${zip_name}.zip"
+    # pkgs/playwright-python.nix fetches the driver with stripRoot = false.
     local hash
     hash=$(prefetch_fetchzip_hash "$url" "false")
     driver_obj=$(printf '%s' "$driver_obj" | jq --arg k "$sys" --arg v "$hash" '. + { ($k): $v }')

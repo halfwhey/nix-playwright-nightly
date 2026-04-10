@@ -14,7 +14,7 @@ export TOOL FLAKE_ROOT
 # shellcheck source=scripts/lib.sh
 . "${FLAKE_ROOT}/scripts/lib.sh"
 
-require_cmd curl jq nix nix-build git
+require_cmd curl jq nix git
 
 log "resolving upstream latest playwright from PyPI"
 upstream_latest=$(curl -fsSL "https://pypi.org/pypi/playwright/json" \

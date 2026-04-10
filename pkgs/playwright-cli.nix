@@ -1,5 +1,7 @@
 # buildNpmPackage wrapper for @playwright/cli, fetched from
-# microsoft/playwright-cli at the matching tag and bundled with the
+# microsoft/playwright-cli at the commit SHA recorded in the pin file
+# (not a version tag — pre-release alphas on npm are often published
+# without a corresponding upstream tag) and bundled with the
 # revision-matched browsers from this flake's cli pin.
 {
   buildNpmPackage,
@@ -7,6 +9,7 @@
 }:
 {
   version,
+  packageSha,
   srcHash,
   npmDepsHash,
   browsers,
@@ -18,7 +21,7 @@ buildNpmPackage {
   src = fetchFromGitHub {
     owner = "microsoft";
     repo = "playwright-cli";
-    rev = "v${version}";
+    rev = packageSha;
     hash = srcHash;
   };
 

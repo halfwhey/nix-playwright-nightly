@@ -293,11 +293,11 @@ Steps:
 2. If `pins/<tool>/<package_version>.json` already exists on disk, exit immediately (idempotent).
 3. Resolve `playwright_version` (npm `dependencies.playwright`, or PyPI → setup.py `driver_version`).
 4. Resolve `playwright_sha` (npm `gitHead` for both npm tools and python's driver resolution).
-5. Prefetch hashes by running dummy-hash `nix-build` invocations and parsing the `got:` line from the resulting error:
-   - `fetchFromGitHub microsoft/<repo> v<version>` → `srcHash`
-   - For npm tools: `buildNpmPackage` with `dontNpmBuild = true` → `npmDepsHash`
-   - For python: `fetchzip` of the driver tarball per supported system → `driverHashes`
-   - For each supported system, `fetchzip` of each per-browser CDN archive → `browsers.<name>.hashes.<system>`
+5. Prefetch hashes by invoking the dedicated nixpkgs prefetch tools directly (no `import <nixpkgs>`, no dummy-hash `nix-build` tricks). `scripts/lib.sh` re-execs the update script inside a `nix shell` populated from the **flake's own `flake.lock`** nixpkgs revision, so the prefetch tools are byte-identical to the ones `buildNpmPackage` / `fetchzip` will later consume the hashes with:
+   - `nix-prefetch-github microsoft <repo> --rev v<version>` → `srcHash`
+   - For npm tools: `curl` the upstream `package-lock.json` from `raw.githubusercontent.com` and feed it to `prefetch-npm-deps` → `npmDepsHash`
+   - For python: download + unzip the driver tarball per supported system and hash with `nix hash path --type sha256 --sri` (fetchzip `stripRoot = false`) → `driverHashes`
+   - For each supported system, prefetch each per-browser CDN archive. `stripRoot = true` browsers (chromium, firefox) use `nix-prefetch-url --unpack` + `nix hash convert --to sri`. `stripRoot = false` browsers (chromium-headless-shell, webkit, ffmpeg — see `strip_root_false` in `scripts/lib.sh`) go through the curl + unzip + `nix hash path` path → `browsers.<name>.hashes.<system>`
 6. Fetch `browsers.json` from `raw.githubusercontent.com/microsoft/playwright/<sha>/packages/playwright-core/browsers.json`. Filter to `installByDefault: true` and the browsers we have fetchers for.
 7. Assemble the new pin JSON object with a single `jq -n ...` call (top-level fields + hash fragment + `browsers` object) and pipe into `write_pin_file "$package_version"`, which pretty-prints via `jq .` and atomically writes `pins/<tool>/<version>.json`.
 8. Call `update_manifest "$package_version" "$is_latest"` to append the version to `pins/pin.json`'s `.<tool>.versions` array and (when `is_latest=1`) move `.<tool>.latest`.

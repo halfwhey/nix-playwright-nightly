@@ -15,7 +15,7 @@ export TOOL FLAKE_ROOT
 # shellcheck source=scripts/lib.sh
 . "${FLAKE_ROOT}/scripts/lib.sh"
 
-require_cmd curl jq nix nix-build git
+require_cmd curl jq nix git
 
 log "resolving upstream latest @playwright/cli from npm"
 upstream_latest=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli" \
@@ -36,13 +36,23 @@ if has_pin_for "$package_version"; then
   exit 0
 fi
 
-log "resolving @playwright/cli@${package_version} -> playwright-core version"
-playwright_version=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli/${package_version}" \
+log "resolving @playwright/cli@${package_version} -> playwright-core version + gitHead"
+cli_meta=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli/${package_version}")
+playwright_version=$(printf '%s' "$cli_meta" \
   | jq -r '.dependencies.playwright // .dependencies["playwright-core"] // empty')
 if [ -z "$playwright_version" ]; then
   die "could not resolve dependencies.playwright for @playwright/cli@${package_version}"
 fi
 log "playwright-core version: $playwright_version"
+
+# We always fetch the source at this commit SHA, not `v<version>`, because
+# pre-release / alpha versions on npm are frequently published without a
+# corresponding git tag upstream.
+package_sha=$(printf '%s' "$cli_meta" | jq -r '.gitHead // empty')
+if [ -z "$package_sha" ]; then
+  die "could not resolve gitHead for @playwright/cli@${package_version}"
+fi
+log "playwright-cli SHA: $package_sha"
 
 log "resolving playwright@${playwright_version} -> gitHead SHA"
 playwright_sha=$(curl -fsSL "https://registry.npmjs.org/playwright/${playwright_version}" \
@@ -55,16 +65,17 @@ log "playwright-core SHA: $playwright_sha"
 log "fetching browsers.json at ${playwright_sha}"
 browsers_json=$(fetch_browsers_json "$playwright_sha")
 
-pkg_hashes=$(emit_npm_pkg_hashes "playwright-cli" "$package_version")
+pkg_hashes=$(emit_npm_pkg_hashes "playwright-cli" "$package_sha")
 browsers_obj=$(parse_browsers_json "$browsers_json" | emit_browsers_obj)
 
 jq -n \
   --arg package "$package_version" \
+  --arg packageSha "$package_sha" \
   --arg playwrightVersion "$playwright_version" \
   --arg playwrightSha "$playwright_sha" \
   --argjson pkg_hashes "$pkg_hashes" \
   --argjson browsers "$browsers_obj" \
-  '{ package: $package, playwrightVersion: $playwrightVersion, playwrightSha: $playwrightSha }
+  '{ package: $package, packageSha: $packageSha, playwrightVersion: $playwrightVersion, playwrightSha: $playwrightSha }
    + $pkg_hashes
    + { browsers: $browsers }' \
 | write_pin_file "$package_version"
