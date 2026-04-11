@@ -1,5 +1,5 @@
 {
-  description = "Playwright tools (cli, mcp, node, python) bundled with revision-matched browsers";
+  description = "Playwright tools (cli, dotnet, mcp, node, python) bundled with revision-matched browsers";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

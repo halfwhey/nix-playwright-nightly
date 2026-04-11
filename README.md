@@ -1,12 +1,12 @@
 # nix-playwright-nightly
 
-Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
+Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
 Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
 
 ## Why
 
-`@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, and PyPI `playwright` release independently and regularly pin different `playwright-core` versions at the same moment. nixpkgs's `playwright-driver.browsers` almost never matches any of them. This flake builds a separate browser set per consumer and bakes the right one into each wrapper.
+`@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright` release independently and regularly pin different `playwright-core` versions at the same moment. nixpkgs's `playwright-driver.browsers` almost never matches any of them. This flake builds a separate browser set per consumer and bakes the right one into each wrapper.
 
 Refer to [pin.json](https://github.com/halfwhey/nix-playwright-nightly/blob/main/pins/pin.json) for the current version of each package.
 
@@ -69,6 +69,25 @@ $ playwright-node --version
 $ node -e "const { chromium } = require('playwright'); console.log(typeof chromium)"
 ```
 
+### .NET `Microsoft.Playwright`
+
+The package attribute is `playwright-dotnet`, and the wrapped executable is
+also named `playwright-dotnet`. It runs the official upstream `playwright.ps1`
+wrapper via `pwsh`, but swaps the bundled Node runtime for nixpkgs `nodejs` and
+points Playwright at this flake's pinned browser set. This currently packages
+the CLI/runtime payload, not a full replacement for NuGet restore in arbitrary
+`.csproj` files.
+
+```nix
+playwright.packages.${system}.playwright-dotnet         # latest
+playwright.packages.${system}.playwright-dotnet-1_59_0  # pinned
+```
+
+```sh
+$ playwright-dotnet --version
+$ playwright-dotnet codegen https://example.com
+```
+
 ### PyPI `playwright`
 
 ```nix
@@ -89,6 +108,7 @@ For derivations that embed playwright and manage `PLAYWRIGHT_BROWSERS_PATH` them
 playwright.packages.${system}.playwright-cli-browsers              # latest
 playwright.packages.${system}.playwright-mcp-0_0_70-browsers      # pinned
 playwright.packages.${system}.playwright-node-1_59_1-browsers     # pinned
+playwright.packages.${system}.playwright-dotnet-1_59_0-browsers   # pinned
 playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 ```
 
@@ -109,6 +129,7 @@ playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
             playwright.packages.${system}.playwright-cli
             playwright.packages.${system}.playwright-mcp-0_0_70
             playwright.packages.${system}.playwright-node
+            playwright.packages.${system}.playwright-dotnet
             playwright.packages.${system}.playwright-python-1_58_0
           ];
         };
@@ -121,6 +142,7 @@ $ nix develop
 $ playwright-cli open --browser=chromium https://example.com
 $ playwright-mcp --version
 $ playwright-node --version
+$ playwright-dotnet --version
 $ playwright --version
 ```
 
@@ -173,6 +195,7 @@ runner image.
 ./scripts/update-cli.sh 0.1.4    # bump cli to a specific version
 ./scripts/update-mcp.sh          # bump mcp to latest on npm
 ./scripts/update-node.sh         # bump node playwright to latest on npm
+./scripts/update-dotnet.sh       # bump Microsoft.Playwright to latest on NuGet
 ./scripts/update-python.sh       # bump python to latest on PyPI
 ```
 

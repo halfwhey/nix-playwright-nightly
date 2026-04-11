@@ -21,6 +21,12 @@ let
     browsers = mkBrowsers pin.browsers;
   };
 
+  mkDotnet = pin: pkgs.callPackage ./pkgs/playwright-dotnet.nix { } {
+    version = pin.package;
+    inherit (pin) packageHash;
+    browsers = mkBrowsers pin.browsers;
+  };
+
   mkPython = pin: pkgs.callPackage ./pkgs/playwright-python.nix { } {
     version = pin.package;
     inherit (pin) srcHash driverHashes;
@@ -85,6 +91,13 @@ let
     mk = mkNode;
   };
 
+  dotnetOutputs = buildTool {
+    prefix = "playwright-dotnet";
+    toolManifest = pins.dotnet;
+    pinDir = ./pins/dotnet;
+    mk = mkDotnet;
+  };
+
   pythonOutputs = buildTool {
     prefix = "playwright-python";
     toolManifest = pins.python;
@@ -95,6 +108,7 @@ in
 cliOutputs
 // mcpOutputs
 // nodeOutputs
+// dotnetOutputs
 // pythonOutputs
 // {
   default = cliOutputs."playwright-cli";

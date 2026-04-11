@@ -14,6 +14,8 @@ concurrency:
 jobs:
   sync-latest:
     runs-on: ubuntu-latest
+    outputs:
+      synced_sha: ${{ steps.record-synced-sha.outputs.sha }}
     permissions:
       contents: write
     steps:
@@ -57,6 +59,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Update dotnet
+        run: ./scripts/update-dotnet.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Update python
         run: ./scripts/update-python.sh
         env:
@@ -66,6 +73,10 @@ jobs:
         run: ./scripts/push-latest-browsers.sh halfwhey 1
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Record synced commit
+        id: record-synced-sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Push commits
         run: git push origin HEAD:main
@@ -77,7 +88,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
+          ref: ${{ needs.sync-latest.outputs.synced_sha }}
 
       - uses: cachix/install-nix-action@v31
         with:
@@ -102,7 +113,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
+          ref: ${{ needs.sync-latest.outputs.synced_sha }}
 
       - uses: cachix/install-nix-action@v31
         with:

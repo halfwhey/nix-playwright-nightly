@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ./scripts/backfill.sh <cli|mcp|node|python>
+# Usage: ./scripts/backfill.sh <cli|dotnet|mcp|node|python>
 #
 # Enumerate every version published for <tool>, diff against pins/pin.json
 # (the .versions array under the tool's key), and run scripts/update-<tool>.sh for each
@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-TOOL="${1:?tool argument required: cli|mcp|node|python}"
+TOOL="${1:?tool argument required: cli|dotnet|mcp|node|python}"
 FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$FLAKE_ROOT"
 
@@ -45,6 +45,26 @@ case "$TOOL" in
       | .[] | "\(.key)\t\(.value)"
     ')
     ;;
+  dotnet)
+    log "fetching NuGet registration metadata for Microsoft.Playwright"
+    meta=$(curl -fsSL "https://api.nuget.org/v3/registration5-semver1/microsoft.playwright/index.json")
+    all_versions=$(
+      while IFS= read -r page; do
+        [ -z "$page" ] && continue
+        if printf '%s' "$page" | jq -e 'has("items")' >/dev/null; then
+          printf '%s\n' "$page"
+        else
+          lower=$(printf '%s' "$page" | jq -r '.lower')
+          upper=$(printf '%s' "$page" | jq -r '.upper')
+          curl -fsSL "https://api.nuget.org/v3/registration5-semver1/microsoft.playwright/page/${lower}/${upper}.json"
+        fi
+      done < <(printf '%s' "$meta" | jq -c '.items[]') | jq -rs '
+        map((.items // [])[] | .catalogEntry | select(.version | contains("-") | not) | { version, published })
+        | sort_by(.published)
+        | .[] | "\(.version)\t\(.published)"
+      '
+    )
+    ;;
   python)
     log "fetching PyPI metadata for playwright"
     meta=$(curl -fsSL "https://pypi.org/pypi/playwright/json")
@@ -58,7 +78,7 @@ case "$TOOL" in
     ')
     ;;
   *)
-    die "unknown tool: $TOOL (expected cli|mcp|node|python)"
+    die "unknown tool: $TOOL (expected cli|dotnet|mcp|node|python)"
     ;;
 esac
 
