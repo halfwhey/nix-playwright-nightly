@@ -69,25 +69,6 @@ $ playwright-node --version
 $ node -e "const { chromium } = require('playwright'); console.log(typeof chromium)"
 ```
 
-### .NET `Microsoft.Playwright`
-
-The package attribute is `playwright-dotnet`, and the wrapped executable is
-also named `playwright-dotnet`. It runs the official upstream `playwright.ps1`
-wrapper via `pwsh`, but swaps the bundled Node runtime for nixpkgs `nodejs` and
-points Playwright at this flake's pinned browser set. This currently packages
-the CLI/runtime payload, not a full replacement for NuGet restore in arbitrary
-`.csproj` files.
-
-```nix
-playwright.packages.${system}.playwright-dotnet         # latest
-playwright.packages.${system}.playwright-dotnet-1_59_0  # pinned
-```
-
-```sh
-$ playwright-dotnet --version
-$ playwright-dotnet codegen https://example.com
-```
-
 ### PyPI `playwright`
 
 ```nix
@@ -98,6 +79,18 @@ playwright.packages.${system}.playwright-python-1_58_0   # pinned
 ```sh
 $ playwright --version
 $ python -c "from playwright.sync_api import sync_playwright; print('ok')"
+```
+
+### .NET `Microsoft.Playwright` (Not Tested)
+
+```nix
+playwright.packages.${system}.playwright-dotnet         # latest
+playwright.packages.${system}.playwright-dotnet-1_59_0  # pinned
+```
+
+```sh
+$ playwright-dotnet --version
+$ playwright-dotnet codegen https://example.com
 ```
 
 ### Browsers only
@@ -182,11 +175,13 @@ nix build \
 Current cache coverage:
 - `x86_64-linux` via `ubuntu-latest`
 - `aarch64-linux` via `ubuntu-24.04-arm`
-- `aarch64-darwin` via `macos-15`
+- `aarch64-darwin` via `macos-26`
 
-Darwin note: Playwright's WebKit archives are macOS-version-specific upstream,
-so the current `aarch64-darwin` cache is built against the macOS 15 arm64
-runner image.
+Darwin note: Playwright supports the `mac26-arm64` host platform, but in the
+upstream download registry the current pinned revisions still map that host to
+the `webkit-mac-15-arm64` artifact. This flake mirrors that behavior, so the
+`aarch64-darwin` cache uses the `macos-26` runner while still fetching the
+matching `webkit-mac-15-arm64` bundle.
 
 ## Manual bumps
 

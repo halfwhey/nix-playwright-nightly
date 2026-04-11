@@ -67,6 +67,8 @@ let
     {
       x86_64-linux = "ubuntu-22.04";
       aarch64-linux = "ubuntu-22.04-arm64";
+      # Upstream maps the mac26-arm64 host platform to the mac-15-arm64
+      # WebKit artifact for the currently pinned revisions.
       aarch64-darwin = "mac-15-arm64";
     }
     .${system} or throwSystem;

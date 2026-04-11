@@ -74,9 +74,10 @@ parse_browsers_json() {
 # Compute the CDN URL for a given browser + revision + browserVersion on a
 # given system. Mirrors the DOWNLOAD_PATHS table in playwright-core's
 # registry for x86_64-linux (ubuntu24.04-x64), aarch64-linux
-# (ubuntu24.04-arm64), and aarch64-darwin (mac15-arm64). We intentionally
-# pin Darwin to the current GitHub-hosted macOS 15 arm64 runner image because
-# Playwright ships WebKit archives keyed by macOS major version.
+# (ubuntu24.04-arm64), and aarch64-darwin. For Darwin WebKit, upstream's
+# registry maps the supported mac26-arm64 host platform to the
+# `webkit-mac-15-arm64.zip` artifact for the currently pinned revisions, so we
+# intentionally mirror that download path here.
 browser_url() {
   local name="$1" revision="$2" browserVersion="$3" system="$4"
   case "$name" in
