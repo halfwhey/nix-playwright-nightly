@@ -122,11 +122,12 @@ browser_url() {
   esac
 }
 
-# True (exit 0) if the fetcher for this browser uses `stripRoot = false`.
-# Keep this in sync with lib/browsers/*.nix.
+# True (exit 0) if the fetcher for this browser/system pair uses
+# `stripRoot = false`. Keep this in sync with lib/browsers/*.nix.
 strip_root_false() {
-  case "$1" in
-    chromium-headless-shell|webkit|ffmpeg) return 0 ;;
+  local name="$1" system="$2"
+  case "${name}:${system}" in
+    chromium-headless-shell:*|webkit:*|ffmpeg:*|chromium:aarch64-darwin|firefox:aarch64-darwin) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -256,10 +257,10 @@ emit_browsers_obj() {
   while IFS=$'\t' read -r name revision browserVersion; do
     [ -z "$name" ] && continue
     log "prefetching ${name} ${revision}"
-    local strip="true"
-    strip_root_false "$name" && strip="false"
     local hashes_obj='{}'
     for sys in "${SUPPORTED_SYSTEMS[@]}"; do
+      local strip="true"
+      strip_root_false "$name" "$sys" && strip="false"
       local url
       url=$(browser_url "$name" "$revision" "$browserVersion" "$sys")
       local hash

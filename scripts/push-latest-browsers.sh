@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Usage: ./scripts/push-latest-browsers.sh <cache-name> [keep-revisions]
+# Usage: ./scripts/push-latest-browsers.sh <cache-name> [keep-revisions] [tool...]
 #
-# Build the latest browser link-farm outputs, push their runtime closures to
-# Cachix, and pin each latest alias so only the newest revision stays pinned.
+# Build selected latest browser link-farm outputs, push their runtime closures
+# to Cachix, and pin each latest alias so only the newest revision stays pinned.
 
 set -euo pipefail
 
 CACHE_NAME="${1:?cache name required}"
 KEEP_REVISIONS="${2:-1}"
+shift 2 || true
 FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SYSTEM="$(nix eval --raw --impure --expr builtins.currentSystem)"
 
@@ -29,8 +30,22 @@ push_and_pin() {
   cachix pin "$CACHE_NAME" "$pin_name" "$path" --keep-revisions "$KEEP_REVISIONS"
 }
 
-push_and_pin "playwright-cli-browsers-${SYSTEM}" ".#playwright-cli-browsers"
-push_and_pin "playwright-dotnet-browsers-${SYSTEM}" ".#playwright-dotnet-browsers"
-push_and_pin "playwright-mcp-browsers-${SYSTEM}" ".#playwright-mcp-browsers"
-push_and_pin "playwright-node-browsers-${SYSTEM}" ".#playwright-node-browsers"
-push_and_pin "playwright-python-browsers-${SYSTEM}" ".#playwright-python-browsers"
+resolve_tool() {
+  case "$1" in
+    cli) printf '%s\n%s\n' "playwright-cli-browsers-${SYSTEM}" ".#playwright-cli-browsers" ;;
+    dotnet) printf '%s\n%s\n' "playwright-dotnet-browsers-${SYSTEM}" ".#playwright-dotnet-browsers" ;;
+    mcp) printf '%s\n%s\n' "playwright-mcp-browsers-${SYSTEM}" ".#playwright-mcp-browsers" ;;
+    node) printf '%s\n%s\n' "playwright-node-browsers-${SYSTEM}" ".#playwright-node-browsers" ;;
+    python) printf '%s\n%s\n' "playwright-python-browsers-${SYSTEM}" ".#playwright-python-browsers" ;;
+    *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python)" ;;
+  esac
+}
+
+if [ "$#" -eq 0 ]; then
+  set -- cli dotnet mcp node python
+fi
+
+for tool in "$@"; do
+  mapfile -t resolved < <(resolve_tool "$tool")
+  push_and_pin "${resolved[0]}" "${resolved[1]}"
+done

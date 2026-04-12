@@ -15,7 +15,13 @@ jobs:
   sync-latest:
     runs-on: ubuntu-latest
     outputs:
-      synced_sha: ${{ steps.record-synced-sha.outputs.sha }}
+      changed: ${{ steps.detect-changes.outputs.changed }}
+      cli_changed: ${{ steps.update-cli.outputs.changed }}
+      dotnet_changed: ${{ steps.update-dotnet.outputs.changed }}
+      mcp_changed: ${{ steps.update-mcp.outputs.changed }}
+      node_changed: ${{ steps.update-node.outputs.changed }}
+      python_changed: ${{ steps.update-python.outputs.changed }}
+      synced_sha: ${{ steps.detect-changes.outputs.sha }}
     permissions:
       contents: write
     steps:
@@ -45,44 +51,109 @@ jobs:
       # Update each tool to the current upstream latest only. If any step
       # fails we stop and let a human investigate.
       - name: Update cli
-        run: ./scripts/update-cli.sh
+        id: update-cli
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-cli.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update mcp
-        run: ./scripts/update-mcp.sh
+        id: update-mcp
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-mcp.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update node
-        run: ./scripts/update-node.sh
+        id: update-node
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-node.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update dotnet
-        run: ./scripts/update-dotnet.sh
+        id: update-dotnet
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-dotnet.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update python
-        run: ./scripts/update-python.sh
+        id: update-python
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-python.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Detect changes
+        id: detect-changes
+        run: |
+          if [ "${{ steps.update-cli.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-python.outputs.changed }}" = "true" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Push and pin latest browser closures
-        run: ./scripts/push-latest-browsers.sh halfwhey 1
+        if: steps.detect-changes.outputs.changed == 'true'
+        run: |
+          tools=()
+          [ "${{ steps.update-cli.outputs.changed }}" = "true" ] && tools+=(cli)
+          [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] && tools+=(dotnet)
+          [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] && tools+=(mcp)
+          [ "${{ steps.update-node.outputs.changed }}" = "true" ] && tools+=(node)
+          [ "${{ steps.update-python.outputs.changed }}" = "true" ] && tools+=(python)
+          ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Record synced commit
-        id: record-synced-sha
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
       - name: Push commits
+        if: steps.detect-changes.outputs.changed == 'true'
         run: git push origin HEAD:main
 
   push-arm-browser-cache:
     needs: sync-latest
+    if: needs.sync-latest.outputs.changed == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -102,12 +173,20 @@ jobs:
           skipPush: true
 
       - name: Push and pin latest browser closures
-        run: ./scripts/push-latest-browsers.sh halfwhey 1
+        run: |
+          tools=()
+          [ "${{ needs.sync-latest.outputs.cli_changed }}" = "true" ] && tools+=(cli)
+          [ "${{ needs.sync-latest.outputs.dotnet_changed }}" = "true" ] && tools+=(dotnet)
+          [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
+          [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
+          [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
+          ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
   push-darwin-browser-cache:
     needs: sync-latest
+    if: needs.sync-latest.outputs.changed == 'true'
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
@@ -128,6 +207,13 @@ jobs:
           skipPush: true
 
       - name: Push and pin latest browser closures
-        run: ./scripts/push-latest-browsers.sh halfwhey 1
+        run: |
+          tools=()
+          [ "${{ needs.sync-latest.outputs.cli_changed }}" = "true" ] && tools+=(cli)
+          [ "${{ needs.sync-latest.outputs.dotnet_changed }}" = "true" ] && tools+=(dotnet)
+          [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
+          [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
+          [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
+          ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
