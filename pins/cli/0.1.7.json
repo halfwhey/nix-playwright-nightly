@@ -30,7 +30,7 @@
       "hashes": {
         "x86_64-linux": "sha256-Pskyc1kSUaj1mad6QOLFBilmcSHcWciOt1vh2MST7rU=",
         "aarch64-linux": "sha256-pLOmdM2D4eKmV0v+sjk0O/vSO96oUFuMfruy0uKyp3c=",
-        "aarch64-darwin": "sha256-SiB76G3djQK2ezCx8V11uaaNqhVROO/ZiLLkZ1djFxA="
+        "aarch64-darwin": "sha256-xAg8VpJeIEfykDk2sM8n7kE/mxhDfLFAvaLW+fcxno4="
       }
     },
     "webkit": {
