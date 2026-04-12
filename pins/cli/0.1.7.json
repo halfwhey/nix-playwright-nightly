@@ -12,7 +12,7 @@
       "hashes": {
         "x86_64-linux": "sha256-BJXebvqeiojzoeSNx91nQpZrqJZXDcTDDvxkeguCt04=",
         "aarch64-linux": "sha256-jsesQ6juzMPQzmn0Ygb8hmpxCeLHJVBL89qto5yuh5s=",
-        "aarch64-darwin": "sha256-oI896CWECeyQ2KN6VrRt0T8bXaHhy9cO/MsdEU0tnb0="
+        "aarch64-darwin": "sha256-jmtzueGUZpf0PhscVoObGhW6p+VaOyblhmTTgjmpfSI="
       }
     },
     "chromium-headless-shell": {
