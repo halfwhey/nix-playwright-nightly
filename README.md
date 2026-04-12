@@ -1,5 +1,7 @@
 # nix-playwright-nightly
 
+[![sync](https://github.com/halfwhey/nix-playwright-nightly/actions/workflows/sync.yml/badge.svg)](https://github.com/halfwhey/nix-playwright-nightly/actions/workflows/sync.yml)
+
 Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
 Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
