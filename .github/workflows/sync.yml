@@ -6,6 +6,12 @@ on:
     # for each tool and adds it if it's new.
     - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      force_push_latest_browsers:
+        description: "Push latest browser closures even if no pins changed"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: sync
@@ -16,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.detect-changes.outputs.changed }}
+      push_browsers: ${{ steps.detect-changes.outputs.push_browsers }}
       cli_changed: ${{ steps.update-cli.outputs.changed }}
       dotnet_changed: ${{ steps.update-dotnet.outputs.changed }}
       mcp_changed: ${{ steps.update-mcp.outputs.changed }}
@@ -132,10 +139,20 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+          if [ "${{ steps.update-cli.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-python.outputs.changed }}" = "true" ] || \
+             { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_push_latest_browsers }}" = "true" ]; }; then
+            echo "push_browsers=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "push_browsers=false" >> "$GITHUB_OUTPUT"
+          fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Push and pin latest browser closures
-        if: steps.detect-changes.outputs.changed == 'true'
+        if: steps.detect-changes.outputs.push_browsers == 'true'
         run: |
           tools=()
           [ "${{ steps.update-cli.outputs.changed }}" = "true" ] && tools+=(cli)
@@ -153,7 +170,7 @@ jobs:
 
   push-arm-browser-cache:
     needs: sync-latest
-    if: needs.sync-latest.outputs.changed == 'true'
+    if: needs.sync-latest.outputs.push_browsers == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -186,7 +203,7 @@ jobs:
 
   push-darwin-browser-cache:
     needs: sync-latest
-    if: needs.sync-latest.outputs.changed == 'true'
+    if: needs.sync-latest.outputs.push_browsers == 'true'
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
