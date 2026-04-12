@@ -32,11 +32,26 @@ push_and_pin() {
 
 resolve_tool() {
   case "$1" in
-    cli) printf '%s\n%s\n' "playwright-cli-browsers-${SYSTEM}" ".#playwright-cli-browsers" ;;
-    dotnet) printf '%s\n%s\n' "playwright-dotnet-browsers-${SYSTEM}" ".#playwright-dotnet-browsers" ;;
-    mcp) printf '%s\n%s\n' "playwright-mcp-browsers-${SYSTEM}" ".#playwright-mcp-browsers" ;;
-    node) printf '%s\n%s\n' "playwright-node-browsers-${SYSTEM}" ".#playwright-node-browsers" ;;
-    python) printf '%s\n%s\n' "playwright-python-browsers-${SYSTEM}" ".#playwright-python-browsers" ;;
+    cli)
+      RESOLVED_PIN_NAME="playwright-cli-browsers-${SYSTEM}"
+      RESOLVED_ATTR=".#playwright-cli-browsers"
+      ;;
+    dotnet)
+      RESOLVED_PIN_NAME="playwright-dotnet-browsers-${SYSTEM}"
+      RESOLVED_ATTR=".#playwright-dotnet-browsers"
+      ;;
+    mcp)
+      RESOLVED_PIN_NAME="playwright-mcp-browsers-${SYSTEM}"
+      RESOLVED_ATTR=".#playwright-mcp-browsers"
+      ;;
+    node)
+      RESOLVED_PIN_NAME="playwright-node-browsers-${SYSTEM}"
+      RESOLVED_ATTR=".#playwright-node-browsers"
+      ;;
+    python)
+      RESOLVED_PIN_NAME="playwright-python-browsers-${SYSTEM}"
+      RESOLVED_ATTR=".#playwright-python-browsers"
+      ;;
     *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python)" ;;
   esac
 }
@@ -46,6 +61,6 @@ if [ "$#" -eq 0 ]; then
 fi
 
 for tool in "$@"; do
-  mapfile -t resolved < <(resolve_tool "$tool")
-  push_and_pin "${resolved[0]}" "${resolved[1]}"
+  resolve_tool "$tool"
+  push_and_pin "$RESOLVED_PIN_NAME" "$RESOLVED_ATTR"
 done
