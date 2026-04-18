@@ -1,6 +1,12 @@
 # nix-playwright-nightly
 
 [![sync](https://github.com/halfwhey/nix-playwright-nightly/actions/workflows/sync.yml/badge.svg)](https://github.com/halfwhey/nix-playwright-nightly/actions/workflows/sync.yml)
+[![playwright-cli](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.cli.latest&label=playwright-cli&color=blue&logo=npm)](https://www.npmjs.com/package/@playwright/cli)
+[![playwright-mcp](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.mcp.latest&label=playwright-mcp&color=blue&logo=npm)](https://www.npmjs.com/package/@playwright/mcp)
+[![playwright-node](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.node.latest&label=playwright-node&color=339933&logo=nodedotjs&logoColor=white)](https://www.npmjs.com/package/playwright)
+[![playwright-dotnet](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.dotnet.latest&label=playwright-dotnet&color=512BD4&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Microsoft.Playwright)
+[![playwright-python](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.python.latest&label=playwright-python&color=3776AB&logo=python&logoColor=white)](https://pypi.org/project/playwright/)
+
 
 Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
