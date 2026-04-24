@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/push-latest-browsers.sh <cache-name> [keep-revisions] [tool...]
 #
-# Build selected latest browser link-farm outputs, push their runtime closures
+# Build selected latest browser outputs, push their runtime closures
 # to Cachix, and pin each latest alias so only the newest revision stays pinned.
 
 set -euo pipefail
@@ -52,7 +52,11 @@ resolve_tool() {
       RESOLVED_PIN_NAME="playwright-python-browsers-${SYSTEM}"
       RESOLVED_ATTR=".#playwright-python-browsers"
       ;;
-    *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python)" ;;
+    camoufox)
+      RESOLVED_PIN_NAME="camoufox-${SYSTEM}"
+      RESOLVED_ATTR=".#camoufox"
+      ;;
+    *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python|camoufox)" ;;
   esac
 }
 

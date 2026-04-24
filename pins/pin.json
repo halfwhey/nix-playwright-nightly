@@ -31,5 +31,11 @@
     "versions": [
       "1.58.0"
     ]
+  },
+  "camoufox": {
+    "latest": "135.0.1-beta.24",
+    "versions": [
+      "135.0.1-beta.24"
+    ]
   }
 }

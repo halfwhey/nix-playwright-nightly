@@ -10,7 +10,11 @@
 
 Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
+It also packages Camoufox as a standalone browser output, independent of the Playwright browser sets.
+
 Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
+
+Camoufox is currently available on `aarch64-linux`.
 
 ## Why
 
@@ -113,6 +117,17 @@ playwright.packages.${system}.playwright-dotnet-1_59_0-browsers   # pinned
 playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 ```
 
+### Camoufox
+
+```nix
+playwright.packages.aarch64-linux.camoufox                 # latest
+playwright.packages.aarch64-linux.camoufox-135_0_1-beta_24 # pinned
+```
+
+```sh
+$ camoufox --version
+```
+
 ### Complete devShell example
 
 ```nix
@@ -164,10 +179,16 @@ environment.systemPackages = [ inputs.playwright.packages.${pkgs.system}.playwri
 
 ## Binary cache
 
-Browser closures are published to `https://halfwhey.cachix.org`. Set it up once:
+Browser closures are published to `https://halfwhey.cachix.org`. It's enabled by default on the flake. If you would like to build from source, reject the prompt asking you to trust the cache.
 
 ```sh
-cachix use halfwhey
+  nixConfig = {
+    extra-substituters = [ "https://halfwhey.cachix.org" ];
+    extra-trusted-public-keys = [
+      "halfwhey.cachix.org-1:6PtY2HXdJg8gVVe/uyWGqeWXg1cjfQEIi514Gsk4EeI="
+    ];
+  };
+
 ```
 
 Or pass it explicitly for a one-off build:
@@ -182,14 +203,8 @@ nix build \
 
 Current cache coverage:
 - `x86_64-linux` via `ubuntu-latest`
-- `aarch64-linux` via `ubuntu-24.04-arm`
+- `aarch64-linux` via `ubuntu-24.04-arm`, including Camoufox
 - `aarch64-darwin` via `macos-26`
-
-Darwin note: Playwright supports the `mac26-arm64` host platform, but in the
-upstream download registry the current pinned revisions still map that host to
-the `webkit-mac-15-arm64` artifact. This flake mirrors that behavior, so the
-`aarch64-darwin` cache uses the `macos-26` runner while still fetching the
-matching `webkit-mac-15-arm64` bundle.
 
 ## Manual bumps
 
@@ -200,6 +215,7 @@ matching `webkit-mac-15-arm64` bundle.
 ./scripts/update-node.sh         # bump node playwright to latest on npm
 ./scripts/update-dotnet.sh       # bump Microsoft.Playwright to latest on NuGet
 ./scripts/update-python.sh       # bump python to latest on PyPI
+./scripts/update-camoufox.sh     # bump Camoufox to latest on GitHub
 ```
 
 Each script resolves the matching `playwright-core` version, prefetches all hashes, writes the pin file, and commits. Re-running with an already-pinned version is a no-op.

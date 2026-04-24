@@ -33,6 +33,11 @@ let
     browsers = mkBrowsers pin.browsers;
   };
 
+  mkCamoufox = pin: pkgs.callPackage ./pkgs/camoufox.nix { } {
+    version = pin.package;
+    inherit (pin) tag sources;
+  };
+
   # Attribute-name-safe version: nix CLI parses `.` as an attrpath separator
   # so we can't expose `playwright-cli-0.1.5` as a flat attribute name (the
   # user's `nix run .#playwright-cli-0.1.5` would try to descend into three
@@ -104,12 +109,37 @@ let
     pinDir = ./pins/python;
     mk = mkPython;
   };
+
+  buildCamoufox =
+    let
+      toolManifest = pins.camoufox;
+      pinFor = v: readJSON (./pins/camoufox + "/${v}.json");
+      versionedPkgs = map (v: {
+        name = "camoufox-${toAttr v}";
+        value = mkCamoufox (pinFor v);
+      }) toolManifest.versions;
+      latestPin = pinFor toolManifest.latest;
+    in
+    builtins.listToAttrs versionedPkgs
+    // {
+      camoufox = mkCamoufox latestPin;
+    };
+
+  camoufoxOutputs =
+    if (pins ? camoufox) && pkgs.stdenv.hostPlatform.system == "aarch64-linux" then
+      {
+        inherit (buildCamoufox) camoufox;
+      }
+      // builtins.removeAttrs buildCamoufox [ "camoufox" ]
+    else
+      { };
 in
 cliOutputs
 // mcpOutputs
 // nodeOutputs
 // dotnetOutputs
 // pythonOutputs
+// camoufoxOutputs
 // {
   default = cliOutputs."playwright-cli";
 }

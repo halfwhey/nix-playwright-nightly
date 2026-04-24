@@ -1,0 +1,11 @@
+{
+  "package": "135.0.1-beta.24",
+  "tag": "v135.0.1-beta.24",
+  "sources": {
+    "aarch64-linux": {
+      "suffix": "lin.arm64",
+      "url": "https://github.com/daijro/camoufox/releases/download/v135.0.1-beta.24/camoufox-135.0.1-beta.24-lin.arm64.zip",
+      "hash": "sha256-Xve0pryS+NAWKvBuVvEjJoOir2Zubc25Iy2xho3u39E="
+    }
+  }
+}

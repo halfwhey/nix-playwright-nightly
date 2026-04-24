@@ -28,6 +28,7 @@ jobs:
       mcp_changed: ${{ steps.update-mcp.outputs.changed }}
       node_changed: ${{ steps.update-node.outputs.changed }}
       python_changed: ${{ steps.update-python.outputs.changed }}
+      camoufox_changed: ${{ steps.update-camoufox.outputs.changed }}
       synced_sha: ${{ steps.detect-changes.outputs.sha }}
     permissions:
       contents: write
@@ -127,6 +128,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Update camoufox
+        id: update-camoufox
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-camoufox.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Detect changes
         id: detect-changes
         run: |
@@ -134,7 +149,8 @@ jobs:
              [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-python.outputs.changed }}" = "true" ]; then
+             [ "${{ steps.update-python.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-camoufox.outputs.changed }}" = "true" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -144,6 +160,7 @@ jobs:
              [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-python.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-camoufox.outputs.changed }}" = "true" ] || \
              { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_push_latest_browsers }}" = "true" ]; }; then
             echo "push_browsers=true" >> "$GITHUB_OUTPUT"
           else
@@ -160,6 +177,11 @@ jobs:
           [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] && tools+=(mcp)
           [ "${{ steps.update-node.outputs.changed }}" = "true" ] && tools+=(node)
           [ "${{ steps.update-python.outputs.changed }}" = "true" ] && tools+=(python)
+          if [ "${#tools[@]}" -eq 0 ] && \
+             { [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force_push_latest_browsers }}" != "true" ]; }; then
+            echo "No x86_64-linux browser closures to push"
+            exit 0
+          fi
           ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -197,6 +219,17 @@ jobs:
           [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
           [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
           [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
+          [ "${{ needs.sync-latest.outputs.camoufox_changed }}" = "true" ] && tools+=(camoufox)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
+             [ "${{ inputs.force_push_latest_browsers }}" = "true" ] && \
+             [ "${{ needs.sync-latest.outputs.camoufox_changed }}" != "true" ]; then
+            tools+=(camoufox)
+          fi
+          if [ "${#tools[@]}" -eq 0 ] && \
+             { [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force_push_latest_browsers }}" != "true" ]; }; then
+            echo "No aarch64-linux browser closures to push"
+            exit 0
+          fi
           ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -231,6 +264,11 @@ jobs:
           [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
           [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
           [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
+          if [ "${#tools[@]}" -eq 0 ] && \
+             { [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force_push_latest_browsers }}" != "true" ]; }; then
+            echo "No aarch64-darwin browser closures to push"
+            exit 0
+          fi
           ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
