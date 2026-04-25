@@ -53,6 +53,10 @@ buildNpmPackage {
     chmod +x $out/bin/playwright-cli
   '';
 
+  passthru = {
+    inherit browsers;
+  };
+
   meta = {
     description = "playwright-cli ${version} bundled with revision-matched browsers";
     homepage = "https://github.com/microsoft/playwright-cli";

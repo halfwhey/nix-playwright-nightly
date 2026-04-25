@@ -9,7 +9,6 @@
 [![camoufox](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.camoufox.latest&label=camoufox&color=3776AB&logo=python&logoColor=white)](https://pypi.org/project/camoufox/)
 [![camoufox-browsers](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24%5B%22camoufox-browsers%22%5D.latest&label=camoufox-browsers&color=ff7139&logo=firefoxbrowser&logoColor=white)](https://github.com/daijro/camoufox)
 
-
 Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
 It also packages PyPI `camoufox` bundled with the current Camoufox browser, independent of the Playwright browser sets.
@@ -124,6 +123,8 @@ playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 ```nix
 playwright.packages.aarch64-linux.camoufox                         # latest Python wrapper plus latest browser
 playwright.packages.aarch64-linux.camoufox-0_4_11                  # pinned Python wrapper plus latest browser
+playwright.packages.aarch64-linux.camoufox-playwright-cli          # @playwright/cli wrapper configured for Camoufox
+playwright.packages.aarch64-linux.camoufox-playwright-cli-0_4_11   # pinned Camoufox wrapper plus latest @playwright/cli
 playwright.packages.aarch64-linux.camoufox-browsers                # latest browser only
 playwright.packages.aarch64-linux.camoufox-browsers-135_0_1-beta_24 # pinned browser only
 ```
@@ -132,6 +133,7 @@ playwright.packages.aarch64-linux.camoufox-browsers-135_0_1-beta_24 # pinned bro
 $ camoufox --help
 $ python -m camoufox --help
 $ python -c "from camoufox.sync_api import Camoufox; print('ok')"
+$ camoufox-playwright-cli open https://example.com
 ```
 
 Override the PyPI wrapper source or Python Playwright dependency at build time:

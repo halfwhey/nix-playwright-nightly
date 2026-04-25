@@ -59,6 +59,13 @@ let
       browser = buildCamoufoxBrowsers.camoufox-browsers;
     };
 
+  mkCamoufoxPlaywrightCli =
+    camoufox:
+    pkgs.callPackage ./pkgs/camoufox-playwright-cli.nix { } {
+      inherit camoufox;
+      playwrightCli = cliOutputs.playwright-cli;
+    };
+
   # Attribute-name-safe version: nix CLI parses `.` as an attrpath separator
   # so we can't expose `playwright-cli-0.1.5` as a flat attribute name (the
   # user's `nix run .#playwright-cli-0.1.5` would try to descend into three
@@ -161,6 +168,21 @@ let
       camoufox = mkCamoufox latestPin;
     };
 
+  buildCamoufoxPlaywrightCli =
+    let
+      toolManifest = pins.camoufox;
+      pinFor = v: readJSON (./pins/camoufox + "/${v}.json");
+      versionedPkgs = map (v: {
+        name = "camoufox-playwright-cli-${toAttr v}";
+        value = mkCamoufoxPlaywrightCli (mkCamoufox (pinFor v));
+      }) toolManifest.versions;
+      latestPin = pinFor toolManifest.latest;
+    in
+    builtins.listToAttrs versionedPkgs
+    // {
+      camoufox-playwright-cli = mkCamoufoxPlaywrightCli (mkCamoufox latestPin);
+    };
+
   camoufoxOutputs =
     if
       (builtins.hasAttr "camoufox" pins)
@@ -170,9 +192,11 @@ let
       {
         inherit (buildCamoufox) camoufox;
         inherit (buildCamoufoxBrowsers) camoufox-browsers;
+        inherit (buildCamoufoxPlaywrightCli) camoufox-playwright-cli;
       }
       // builtins.removeAttrs buildCamoufox [ "camoufox" ]
       // builtins.removeAttrs buildCamoufoxBrowsers [ "camoufox-browsers" ]
+      // builtins.removeAttrs buildCamoufoxPlaywrightCli [ "camoufox-playwright-cli" ]
     else
       { };
 in
