@@ -1,6 +1,5 @@
-# Shared helpers sourced by scripts/update-cli.sh, scripts/update-dotnet.sh,
-# scripts/update-mcp.sh, scripts/update-node.sh, and scripts/update-python.sh.
-# Callers must set: TOOL (cli|dotnet|mcp|node|python), FLAKE_ROOT (absolute path).
+# Shared helpers sourced by update scripts.
+# Callers must set: TOOL, FLAKE_ROOT (absolute path).
 
 set -euo pipefail
 # By default bash disables `set -e` inside command substitutions, so a

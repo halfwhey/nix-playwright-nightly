@@ -29,6 +29,7 @@ jobs:
       node_changed: ${{ steps.update-node.outputs.changed }}
       python_changed: ${{ steps.update-python.outputs.changed }}
       camoufox_changed: ${{ steps.update-camoufox.outputs.changed }}
+      camoufox_browsers_changed: ${{ steps.update-camoufox-browsers.outputs.changed }}
       synced_sha: ${{ steps.detect-changes.outputs.sha }}
     permissions:
       contents: write
@@ -142,6 +143,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Update camoufox-browsers
+        id: update-camoufox-browsers
+        run: |
+          before=$(git rev-parse HEAD)
+          ./scripts/update-camoufox-browsers.sh
+          after=$(git rev-parse HEAD)
+          if [ "$after" = "$before" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Detect changes
         id: detect-changes
         run: |
@@ -150,7 +165,8 @@ jobs:
              [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-python.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-camoufox.outputs.changed }}" = "true" ]; then
+             [ "${{ steps.update-camoufox.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-camoufox-browsers.outputs.changed }}" = "true" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -161,6 +177,7 @@ jobs:
              [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-python.outputs.changed }}" = "true" ] || \
              [ "${{ steps.update-camoufox.outputs.changed }}" = "true" ] || \
+             [ "${{ steps.update-camoufox-browsers.outputs.changed }}" = "true" ] || \
              { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_push_latest_browsers }}" = "true" ]; }; then
             echo "push_browsers=true" >> "$GITHUB_OUTPUT"
           else
@@ -219,10 +236,14 @@ jobs:
           [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
           [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
           [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
-          [ "${{ needs.sync-latest.outputs.camoufox_changed }}" = "true" ] && tools+=(camoufox)
+          if [ "${{ needs.sync-latest.outputs.camoufox_changed }}" = "true" ] || \
+             [ "${{ needs.sync-latest.outputs.camoufox_browsers_changed }}" = "true" ]; then
+            tools+=(camoufox)
+          fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
              [ "${{ inputs.force_push_latest_browsers }}" = "true" ] && \
-             [ "${{ needs.sync-latest.outputs.camoufox_changed }}" != "true" ]; then
+             [ "${{ needs.sync-latest.outputs.camoufox_changed }}" != "true" ] && \
+             [ "${{ needs.sync-latest.outputs.camoufox_browsers_changed }}" != "true" ]; then
             tools+=(camoufox)
           fi
           if [ "${#tools[@]}" -eq 0 ] && \

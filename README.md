@@ -6,11 +6,13 @@
 [![playwright-node](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.node.latest&label=playwright-node&color=339933&logo=nodedotjs&logoColor=white)](https://www.npmjs.com/package/playwright)
 [![playwright-dotnet](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.dotnet.latest&label=playwright-dotnet&color=512BD4&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Microsoft.Playwright)
 [![playwright-python](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.python.latest&label=playwright-python&color=3776AB&logo=python&logoColor=white)](https://pypi.org/project/playwright/)
+[![camoufox](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24.camoufox.latest&label=camoufox&color=3776AB&logo=python&logoColor=white)](https://pypi.org/project/camoufox/)
+[![camoufox-browsers](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhalfwhey%2Fnix-playwright-nightly%2Fmain%2Fpins%2Fpin.json&query=%24%5B%22camoufox-browsers%22%5D.latest&label=camoufox-browsers&color=ff7139&logo=firefoxbrowser&logoColor=white)](https://github.com/daijro/camoufox)
 
 
 Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright`, each bundled with the exact browser revisions its `playwright-core` requires. No runtime downloads, no `PLAYWRIGHT_BROWSERS_PATH` wiring needed.
 
-It also packages Camoufox as a standalone browser output, independent of the Playwright browser sets.
+It also packages PyPI `camoufox` bundled with the current Camoufox browser, independent of the Playwright browser sets.
 
 Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
 
@@ -120,12 +122,31 @@ playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 ### Camoufox
 
 ```nix
-playwright.packages.aarch64-linux.camoufox                 # latest
-playwright.packages.aarch64-linux.camoufox-135_0_1-beta_24 # pinned
+playwright.packages.aarch64-linux.camoufox                         # latest Python wrapper plus latest browser
+playwright.packages.aarch64-linux.camoufox-0_4_11                  # pinned Python wrapper plus latest browser
+playwright.packages.aarch64-linux.camoufox-browsers                # latest browser only
+playwright.packages.aarch64-linux.camoufox-browsers-135_0_1-beta_24 # pinned browser only
 ```
 
 ```sh
-$ camoufox --version
+$ camoufox --help
+$ python -m camoufox --help
+$ python -c "from camoufox.sync_api import Camoufox; print('ok')"
+```
+
+Override the PyPI wrapper source or Python Playwright dependency at build time:
+
+```nix
+playwright.packages.aarch64-linux.camoufox.override {
+  pypi = "cloverlabs-camoufox";
+  version = "0.5.5";
+  url = "https://files.pythonhosted.org/packages/38/9b/5e80b39959e7660642e9c669d2abe448d0174f0e343bea43d02a12809bfd/cloverlabs_camoufox-0.5.5.tar.gz";
+  hash = "sha256-TzMHGeKtIdlMn0+uEIoHTgfd3627HiJD0dZ2IaPb/tc=";
+}
+
+playwright.packages.aarch64-linux.camoufox.override {
+  playwrightPackage = pkgs.python3Packages.playwright;
+}
 ```
 
 ### Complete devShell example
@@ -147,6 +168,8 @@ $ camoufox --version
             playwright.packages.${system}.playwright-node
             playwright.packages.${system}.playwright-dotnet
             playwright.packages.${system}.playwright-python-1_58_0
+            # aarch64-linux only:
+            # playwright.packages.${system}.camoufox
           ];
         };
     };
@@ -215,10 +238,11 @@ Current cache coverage:
 ./scripts/update-node.sh         # bump node playwright to latest on npm
 ./scripts/update-dotnet.sh       # bump Microsoft.Playwright to latest on NuGet
 ./scripts/update-python.sh       # bump python to latest on PyPI
-./scripts/update-camoufox.sh     # bump Camoufox to latest on GitHub
+./scripts/update-camoufox.sh          # bump PyPI camoufox wrapper to latest
+./scripts/update-camoufox-browsers.sh # bump Camoufox browser to latest on GitHub
 ```
 
-Each script resolves the matching `playwright-core` version, prefetches all hashes, writes the pin file, and commits. Re-running with an already-pinned version is a no-op.
+Each Playwright script resolves the matching `playwright-core` version, prefetches all hashes, writes the pin file, and commits. Camoufox scripts track the browser GitHub release and the PyPI wrapper independently. Re-running with an already-pinned version is a no-op.
 
 CI runs the same update flow once a day. See `.github/workflows/sync.yml`.
 

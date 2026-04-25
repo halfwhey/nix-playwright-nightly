@@ -3,40 +3,61 @@ let
   mkBrowsers = pkgs.callPackage ./lib/mkBrowsers.nix { };
   readJSON = path: builtins.fromJSON (builtins.readFile path);
 
-  mkCli = pin: pkgs.callPackage ./pkgs/playwright-cli.nix { } {
-    version = pin.package;
-    inherit (pin) packageSha srcHash npmDepsHash;
-    browsers = mkBrowsers pin.browsers;
-  };
+  mkCli =
+    pin:
+    pkgs.callPackage ./pkgs/playwright-cli.nix { } {
+      version = pin.package;
+      inherit (pin) packageSha srcHash npmDepsHash;
+      browsers = mkBrowsers pin.browsers;
+    };
 
-  mkMcp = pin: pkgs.callPackage ./pkgs/playwright-mcp.nix { } {
-    version = pin.package;
-    inherit (pin) packageSha srcHash npmDepsHash;
-    browsers = mkBrowsers pin.browsers;
-  };
+  mkMcp =
+    pin:
+    pkgs.callPackage ./pkgs/playwright-mcp.nix { } {
+      version = pin.package;
+      inherit (pin) packageSha srcHash npmDepsHash;
+      browsers = mkBrowsers pin.browsers;
+    };
 
-  mkNode = pin: pkgs.callPackage ./pkgs/playwright-node.nix { } {
-    version = pin.package;
-    inherit (pin) packageHash coreHash;
-    browsers = mkBrowsers pin.browsers;
-  };
+  mkNode =
+    pin:
+    pkgs.callPackage ./pkgs/playwright-node.nix { } {
+      version = pin.package;
+      inherit (pin) packageHash coreHash;
+      browsers = mkBrowsers pin.browsers;
+    };
 
-  mkDotnet = pin: pkgs.callPackage ./pkgs/playwright-dotnet.nix { } {
-    version = pin.package;
-    inherit (pin) packageHash;
-    browsers = mkBrowsers pin.browsers;
-  };
+  mkDotnet =
+    pin:
+    pkgs.callPackage ./pkgs/playwright-dotnet.nix { } {
+      version = pin.package;
+      inherit (pin) packageHash;
+      browsers = mkBrowsers pin.browsers;
+    };
 
-  mkPython = pin: pkgs.callPackage ./pkgs/playwright-python.nix { } {
-    version = pin.package;
-    inherit (pin) srcHash driverHashes;
-    browsers = mkBrowsers pin.browsers;
-  };
+  mkPython =
+    pin:
+    pkgs.callPackage ./pkgs/playwright-python.nix { } {
+      version = pin.package;
+      inherit (pin) srcHash driverHashes;
+      browsers = mkBrowsers pin.browsers;
+    };
 
-  mkCamoufox = pin: pkgs.callPackage ./pkgs/camoufox.nix { } {
-    version = pin.package;
-    inherit (pin) tag sources;
-  };
+  mkCamoufoxBrowsers =
+    pin:
+    pkgs.callPackage ./pkgs/camoufox.nix { } {
+      version = pin.package;
+      inherit (pin) tag sources;
+    };
+
+  mkCamoufox =
+    pin:
+    pkgs.callPackage ./pkgs/camoufox-wrapper.nix {
+      version = pin.package;
+      inherit (pin) pypi url hash;
+      src = null;
+      browser = buildCamoufoxBrowsers.camoufox-browsers;
+    };
 
   # Attribute-name-safe version: nix CLI parses `.` as an attrpath separator
   # so we can't expose `playwright-cli-0.1.5` as a flat attribute name (the
@@ -110,6 +131,21 @@ let
     mk = mkPython;
   };
 
+  buildCamoufoxBrowsers =
+    let
+      toolManifest = pins."camoufox-browsers";
+      pinFor = v: readJSON (./pins/camoufox-browsers + "/${v}.json");
+      versionedPkgs = map (v: {
+        name = "camoufox-browsers-${toAttr v}";
+        value = mkCamoufoxBrowsers (pinFor v);
+      }) toolManifest.versions;
+      latestPin = pinFor toolManifest.latest;
+    in
+    builtins.listToAttrs versionedPkgs
+    // {
+      camoufox-browsers = mkCamoufoxBrowsers latestPin;
+    };
+
   buildCamoufox =
     let
       toolManifest = pins.camoufox;
@@ -126,11 +162,17 @@ let
     };
 
   camoufoxOutputs =
-    if (pins ? camoufox) && pkgs.stdenv.hostPlatform.system == "aarch64-linux" then
+    if
+      (builtins.hasAttr "camoufox" pins)
+      && (builtins.hasAttr "camoufox-browsers" pins)
+      && pkgs.stdenv.hostPlatform.system == "aarch64-linux"
+    then
       {
         inherit (buildCamoufox) camoufox;
+        inherit (buildCamoufoxBrowsers) camoufox-browsers;
       }
       // builtins.removeAttrs buildCamoufox [ "camoufox" ]
+      // builtins.removeAttrs buildCamoufoxBrowsers [ "camoufox-browsers" ]
     else
       { };
 in

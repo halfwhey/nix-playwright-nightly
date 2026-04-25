@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Usage: ./scripts/push-latest-browsers.sh <cache-name> [keep-revisions] [tool...]
+#        ./scripts/push-latest-browsers.sh <cache-name> [tool...]
 #
 # Build selected latest browser outputs, push their runtime closures
 # to Cachix, and pin each latest alias so only the newest revision stays pinned.
@@ -7,8 +8,18 @@
 set -euo pipefail
 
 CACHE_NAME="${1:?cache name required}"
-KEEP_REVISIONS="${2:-1}"
-shift 2 || true
+shift
+KEEP_REVISIONS=1
+if [ "$#" -gt 0 ]; then
+  case "$1" in
+    ''|*[!0-9]*)
+      ;;
+    *)
+      KEEP_REVISIONS="$1"
+      shift
+      ;;
+  esac
+fi
 FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SYSTEM="$(nix eval --raw --impure --expr builtins.currentSystem)"
 
@@ -53,8 +64,8 @@ resolve_tool() {
       RESOLVED_ATTR=".#playwright-python-browsers"
       ;;
     camoufox)
-      RESOLVED_PIN_NAME="camoufox-${SYSTEM}"
-      RESOLVED_ATTR=".#camoufox"
+      RESOLVED_PIN_NAME="camoufox-browsers-${SYSTEM}"
+      RESOLVED_ATTR=".#camoufox-browsers"
       ;;
     *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python|camoufox)" ;;
   esac

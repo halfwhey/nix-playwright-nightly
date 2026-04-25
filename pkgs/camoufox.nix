@@ -32,7 +32,9 @@ stdenv.mkDerivation {
   inherit version;
 
   src = fetchzip {
-    url = source.url or "https://github.com/daijro/camoufox/releases/download/${tag}/camoufox-${version}-${source.suffix}.zip";
+    url =
+      source.url
+        or "https://github.com/daijro/camoufox/releases/download/${tag}/camoufox-${version}-${source.suffix}.zip";
     stripRoot = false;
     hash = source.hash;
   };
