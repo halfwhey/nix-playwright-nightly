@@ -4,9 +4,12 @@
 # without a corresponding upstream tag) and bundled with the
 # revision-matched browsers from this flake's mcp pin.
 #
-# microsoft/playwright-mcp v0.0.65+ is an npm workspace; the buildNpmPackage
-# default install doesn't expose the inner @playwright/mcp bin at
-# $out/bin, so we link it manually.
+# microsoft/playwright-mcp v0.0.65..v0.0.70 was an npm workspace; the
+# buildNpmPackage default install didn't expose the inner @playwright/mcp
+# bin at $out/bin, so we linked it manually. From v0.0.71 the repo is a
+# single @playwright/mcp package with bin.playwright-mcp set, so
+# buildNpmPackage creates $out/bin/playwright-mcp itself — only fall back
+# to the workspace symlink when that bin is missing.
 {
   buildNpmPackage,
   fetchFromGitHub,
@@ -36,9 +39,11 @@ buildNpmPackage {
   nativeBuildInputs = [ makeWrapper ];
 
   postInstall = ''
-    mkdir -p $out/bin
-    ln -s $out/lib/node_modules/playwright-mcp-internal/packages/playwright-mcp/cli.js \
-      $out/bin/playwright-mcp
+    if [ ! -e $out/bin/playwright-mcp ]; then
+      mkdir -p $out/bin
+      ln -s $out/lib/node_modules/playwright-mcp-internal/packages/playwright-mcp/cli.js \
+        $out/bin/playwright-mcp
+    fi
   '';
 
   postFixup = ''
