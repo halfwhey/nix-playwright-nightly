@@ -1,0 +1,54 @@
+{
+  "package": "0.0.73",
+  "packageSha": "4c76659c5c637d2c66b8708012c9562c6c41773b",
+  "playwrightVersion": "1.60.0-alpha-1777669338000",
+  "playwrightSha": "9ec5d7fdb786c81ee5a4c642d8e19e7488a1fa84",
+  "srcHash": "sha256-Hxxq4hvtbQ9u6i/C8GhZXCwgmRqAxExBpKUAFIVzKj8=",
+  "npmDepsHash": "sha256-s7Stnezmw8nh361yFjiNRWKpCCObprzx3dSKEFgrWec=",
+  "browsers": {
+    "chromium": {
+      "revision": "1222",
+      "browserVersion": "148.0.7778.56",
+      "hashes": {
+        "x86_64-linux": "sha256-HlRGVlJrwNmHK9+P2RuzmFtGNKUTArD0KHCO+Leg/4E=",
+        "aarch64-linux": "sha256-E7Nmz9fET0kXNf7ooaUBDHtDBWTGq4JDKKUbo/UfA+c=",
+        "aarch64-darwin": "sha256-1rQV8ki8zqYTjWyTluImYcfTVX0wyY5Qakt0QC63YRw="
+      }
+    },
+    "chromium-headless-shell": {
+      "revision": "1222",
+      "browserVersion": "148.0.7778.56",
+      "hashes": {
+        "x86_64-linux": "sha256-sMM54Ef1wOylHKQMTPzZz4W5ly0ra96KMbCNH6SDNaE=",
+        "aarch64-linux": "sha256-veEBmsivFDrG1bArQ780+gMbsoT1Zv4VLcIPpgn4M/I=",
+        "aarch64-darwin": "sha256-X5DxrAF516TuApmN3Mp9cskCEJX3FuolvISx3Twv6vw="
+      }
+    },
+    "firefox": {
+      "revision": "1515",
+      "browserVersion": "149.0",
+      "hashes": {
+        "x86_64-linux": "sha256-Pskyc1kSUaj1mad6QOLFBilmcSHcWciOt1vh2MST7rU=",
+        "aarch64-linux": "sha256-pLOmdM2D4eKmV0v+sjk0O/vSO96oUFuMfruy0uKyp3c=",
+        "aarch64-darwin": "sha256-xAg8VpJeIEfykDk2sM8n7kE/mxhDfLFAvaLW+fcxno4="
+      }
+    },
+    "webkit": {
+      "revision": "2285",
+      "browserVersion": "26.4",
+      "hashes": {
+        "x86_64-linux": "sha256-x8hxnnQ6L8Tmn0k3N3ODGSZcKRYl36m5e/r/ivHgqVQ=",
+        "aarch64-linux": "sha256-PogsXEzmdObYJYP278oUDaRjeer75nv2pZ+Fdw+pCvM=",
+        "aarch64-darwin": "sha256-8fG3+AF0S+lWIhqYa0V0kAH4OBobiawhuiu9AELrbD0="
+      }
+    },
+    "ffmpeg": {
+      "revision": "1011",
+      "hashes": {
+        "x86_64-linux": "sha256-AWTiui+ccKHxsIaQSgc5gWCJT5gYwIWzAEqSuKgVqZU=",
+        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q=",
+        "aarch64-darwin": "sha256-ky10UQj+XPVGpaWAPvKd51C5brml0y9xQ6iKcrxAMRc="
+      }
+    }
+  }
+}
