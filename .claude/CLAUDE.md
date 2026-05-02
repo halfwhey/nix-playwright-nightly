@@ -373,6 +373,7 @@ To retrigger a failed sync for a specific version: delete the half-written `pins
 
 - `--browser=chrome` (branded Chrome) is out of scope: the resolver hardcodes `/opt/google/chrome/chrome` with no env override. Use `--browser=chromium`.
 - Newer webkit revisions (2276+) link against `libhyphen.so.0`, so `lib/browsers/webkit.nix` adds `hyphen` to its `buildInputs`. Older pins that don't need it still build fine.
+- Webkit revisions (2285+) additionally link against `libbacktrace.so.0`, so `lib/browsers/webkit.nix` also adds `libbacktrace` to its `buildInputs`. When CI fails with `auto-patchelf could not satisfy dependency lib<X>.so` for a webkit revision, the upstream WebKit Linux build picked up a new transitive shared lib; add the corresponding nixpkgs package to `lib/browsers/webkit.nix`'s function args and `buildInputs` and re-run the failed sync.
 - **aarch64 only**: the `node` binary bundled inside the PyPI driver tarball segfaults on NixOS aarch64 even after `autoPatchelfHook`. `pkgs/playwright-python.nix` works around this by setting `PLAYWRIGHT_NODEJS_PATH` to the nixpkgs `nodejs` executable in `postFixup`, which makes playwright-python's `_driver.py` use system node instead of the bundled one.
 - **Darwin**: the upstream download registry still maps `aarch64-darwin` (`mac26-arm64` host) to the `webkit-mac-15-arm64` artifact; this flake mirrors that and the cachix push job runs on `macos-26`.
 - Never run `make nix` or any NixOS rebuild from within this repo. Build with `nix build` only.

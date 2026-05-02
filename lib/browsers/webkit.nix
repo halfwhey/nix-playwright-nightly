@@ -30,6 +30,7 @@
   icu70,
   lcms,
   libavif,
+  libbacktrace,
   libdrm,
   libepoxy,
   libevent,
@@ -187,6 +188,7 @@ stdenv.mkDerivation {
     icu70
     lcms
     libavif'
+    libbacktrace
     libdrm
     libepoxy
     libevent
