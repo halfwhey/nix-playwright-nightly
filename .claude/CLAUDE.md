@@ -354,14 +354,16 @@ The update scripts are idempotent: if `pins/<tool>/<version>.json` already exist
 
 The job layout:
 
-1. **`sync-latest`** (`ubuntu-latest`) — checks out `main` and runs `./scripts/update-cli.sh`, then `update-mcp.sh`, `update-node.sh`, `update-dotnet.sh`, `update-python.sh` **without arguments**. Each one is a no-op if the current upstream latest is already pinned; otherwise it writes a new pin file, updates the manifest, builds the tool locally, and commits. A failure stops the workflow so a human can investigate before more versions pile up.
+1. **`sync-latest`** (`ubuntu-latest`) checks out `main` and runs `./scripts/update-cli.sh`, then `update-mcp.sh`, `update-node.sh`, `update-dotnet.sh`, `update-python.sh` **without arguments**. Camoufox is intentionally excluded from scheduled sync and Cachix publishing because the browser closures are too large for the current pin budget. Each Playwright update script is a no-op if the current upstream latest is already pinned; otherwise it writes a new pin file, updates the manifest, builds the tool locally, and commits. A failure stops the workflow so a human can investigate before more versions pile up.
 2. The same job then calls `scripts/push-latest-browsers.sh halfwhey 1 <changed-tools>` to push and cachix-pin the x86_64-linux browser linkFarms for every tool whose pin changed this run (or all five when `force_push_latest_browsers` is set).
 3. **`push-arm-browser-cache`** (`ubuntu-24.04-arm`) and **`push-darwin-browser-cache`** (`macos-26`) both checkout the updated SHA and re-run `push-latest-browsers.sh` so the aarch64-linux and aarch64-darwin closures land in cachix under the same pin names.
 4. Finally the first job does `git push origin HEAD:main` with the default `GITHUB_TOKEN`.
 
 **This workflow only tracks upstream latest — it does not backfill historical versions.** `scripts/backfill.sh` exists and can enumerate every unpinned version from the registry, but it is invoked manually (not from CI). Use it when you deliberately want to import a range of older versions.
 
-The binary cache is `halfwhey.cachix.org`. The workflow authenticates with `CACHIX_AUTH_TOKEN` (cachix-action is invoked with `skipPush: true` — pushes are explicit via `push-latest-browsers.sh`).
+The binary cache is `halfwhey.cachix.org`. The workflow authenticates with `CACHIX_AUTH_TOKEN` (cachix-action is invoked with `skipPush: true`; pushes are explicit via `push-latest-browsers.sh`).
+
+Do not add Camoufox back to the sync workflow or `push-latest-browsers.sh` calls unless the Cachix pin storage budget has been raised or a separate cache policy has been chosen.
 
 ## Maintenance
 
