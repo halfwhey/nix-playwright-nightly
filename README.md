@@ -226,9 +226,9 @@ nix build \
   github:halfwhey/nix-playwright-nightly#playwright-cli
 ```
 
-Current cache coverage:
+Current cache coverage (excluding camoufox):
 - `x86_64-linux` via `ubuntu-latest`
-- `aarch64-linux` via `ubuntu-24.04-arm`, including Camoufox
+- `aarch64-linux` via `ubuntu-24.04-arm`
 - `aarch64-darwin` via `macos-26`
 
 ## Manual bumps
