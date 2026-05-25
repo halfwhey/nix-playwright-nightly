@@ -83,11 +83,12 @@ python3Packages.buildPythonPackage {
     # Setup.py would download the driver from CDN at build time; we've already
     # fetched and patched it via the `driver` derivation above. Stub it out and
     # relax the build deps.
-    substituteInPlace pyproject.toml \
-      --replace-fail ', "auditwheel==6.2.0"' "" \
-      --replace-fail "setuptools-scm==8.3.1" "setuptools-scm" \
-      --replace-fail "setuptools==80.9.0" "setuptools" \
-      --replace-fail "wheel==0.45.1" "wheel"
+    sed -i -E \
+      -e 's/, "auditwheel==[0-9]+(\.[0-9]+)*"//g' \
+      -e 's/"setuptools-scm==[0-9]+(\.[0-9]+)*"/"setuptools-scm"/g' \
+      -e 's/"setuptools==[0-9]+(\.[0-9]+)*"/"setuptools"/g' \
+      -e 's/"wheel==[0-9]+(\.[0-9]+)*"/"wheel"/g' \
+      pyproject.toml
     rm setup.py
   '';
 
