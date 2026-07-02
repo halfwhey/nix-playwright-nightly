@@ -23,6 +23,7 @@
   freetype,
   glib,
   glib-networking,
+  enchant,
   gst_all_1,
   harfbuzz,
   harfbuzzFull,
@@ -177,6 +178,7 @@ stdenv.mkDerivation {
     fontconfig.lib
     freetype
     glib
+    enchant
     brotli
     libjxl'
     gst_all_1.gst-plugins-bad
