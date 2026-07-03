@@ -39,6 +39,7 @@ let
     pin:
     pkgs.callPackage ./pkgs/playwright-python.nix { } {
       version = pin.package;
+      driverVersion = pin.playwrightVersion or pin.package;
       inherit (pin) srcHash driverHashes;
       browsers = mkBrowsers pin.browsers;
     };

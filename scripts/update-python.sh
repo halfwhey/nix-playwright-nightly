@@ -36,12 +36,19 @@ if has_pin_for "$package_version"; then
 fi
 
 log "resolving playwright-python v${package_version} -> driver_version"
-# Buffer curl output before awk so awk's early exit doesn't SIGPIPE curl,
-# which would trip set -o pipefail.
-setup_py=$(curl -fsSL "https://raw.githubusercontent.com/microsoft/playwright-python/v${package_version}/setup.py")
-driver_version=$(printf '%s\n' "$setup_py" | awk -F'"' '/^driver_version[[:space:]]*=/ {print $2; exit}')
+# Newer playwright-python tags store the embedded driver version in a
+# DRIVER_VERSION file. Older tags kept a quoted literal in setup.py.
+driver_version_url="https://raw.githubusercontent.com/microsoft/playwright-python/v${package_version}/DRIVER_VERSION"
+if driver_version=$(curl -fsSL "$driver_version_url" 2>/dev/null); then
+  driver_version=$(printf '%s' "$driver_version" | tr -d '\r\n')
+else
+  # Buffer curl output before awk so awk's early exit doesn't SIGPIPE curl,
+  # which would trip set -o pipefail.
+  setup_py=$(curl -fsSL "https://raw.githubusercontent.com/microsoft/playwright-python/v${package_version}/setup.py")
+  driver_version=$(printf '%s\n' "$setup_py" | awk -F'"' '/^driver_version[[:space:]]*=/ {print $2; exit}')
+fi
 if [ -z "$driver_version" ]; then
-  die "could not parse driver_version from playwright-python v${package_version} setup.py"
+  die "could not resolve driver_version for playwright-python v${package_version}"
 fi
 log "playwright-core (driver) version: $driver_version"
 
@@ -58,7 +65,7 @@ log "playwright-core SHA: $playwright_sha"
 log "fetching browsers.json at ${playwright_sha}"
 browsers_json=$(fetch_browsers_json "$playwright_sha")
 
-pkg_hashes=$(emit_python_pkg_hashes "$package_version")
+pkg_hashes=$(emit_python_pkg_hashes "$package_version" "$driver_version")
 browsers_obj=$(parse_browsers_json "$browsers_json" | emit_browsers_obj)
 
 jq -n \

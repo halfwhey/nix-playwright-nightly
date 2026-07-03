@@ -16,6 +16,7 @@
 }:
 {
   version,
+  driverVersion ? version,
   srcHash,
   driverHashes,
   browsers,
@@ -38,10 +39,10 @@ let
   #   ./LICENSE
   driver = stdenv.mkDerivation {
     pname = "playwright-driver";
-    inherit version;
+    version = driverVersion;
 
     src = fetchzip {
-      url = "https://cdn.playwright.dev/builds/driver/playwright-${version}-${driverZipName}.zip";
+      url = "https://cdn.playwright.dev/builds/driver/${lib.optionalString (lib.hasInfix "-" driverVersion) "next/"}playwright-${driverVersion}-${driverZipName}.zip";
       stripRoot = false;
       hash = driverHashes.${system} or throwSystem;
     };

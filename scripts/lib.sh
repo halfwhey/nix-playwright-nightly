@@ -221,13 +221,20 @@ emit_npm_pkg_hashes() {
 }
 
 # Emit a JSON fragment `{ srcHash, driverHashes: { x86_64-linux, aarch64-linux } }`
-# for the python tool. The driver tarball lives at cdn.playwright.dev/builds/driver
-# and is fetched per arch (linux, linux-arm64, mac-arm64).
+# for the python tool. The source tag uses the PyPI package version, while the
+# embedded driver may use a different playwright-core version. The driver
+# tarball lives at cdn.playwright.dev/builds/driver[/next] and is fetched per
+# arch (linux, linux-arm64, mac-arm64).
 emit_python_pkg_hashes() {
-  local version="$1"
-  log "prefetching playwright-python v${version} src hash"
+  local package_version="$1"
+  local driver_version="${2:-$package_version}"
+  log "prefetching playwright-python v${package_version} src hash"
   local src
-  src=$(prefetch_github_hash "microsoft" "playwright-python" "v${version}")
+  src=$(prefetch_github_hash "microsoft" "playwright-python" "v${package_version}")
+  local driver_path=""
+  case "$driver_version" in
+    *-alpha*|*-beta*|*-next*) driver_path="next/" ;;
+  esac
   local driver_obj='{}'
   for sys in "${SUPPORTED_SYSTEMS[@]}"; do
     local zip_name
@@ -238,7 +245,7 @@ emit_python_pkg_hashes() {
       *) die "unsupported system $sys" ;;
     esac
     log "prefetching playwright driver tarball for ${sys}"
-    local url="https://cdn.playwright.dev/builds/driver/playwright-${version}-${zip_name}.zip"
+    local url="https://cdn.playwright.dev/builds/driver/${driver_path}playwright-${driver_version}-${zip_name}.zip"
     # pkgs/playwright-python.nix fetches the driver with stripRoot = false.
     local hash
     hash=$(prefetch_fetchzip_hash "$url" "false")
