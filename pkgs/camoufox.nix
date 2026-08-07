@@ -36,7 +36,7 @@ stdenv.mkDerivation {
       source.url
         or "https://github.com/daijro/camoufox/releases/download/${tag}/camoufox-${version}-${source.suffix}.zip";
     stripRoot = false;
-    hash = source.hash;
+    inherit (source) hash;
   };
 
   nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [

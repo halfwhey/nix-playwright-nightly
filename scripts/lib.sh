@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared helpers sourced by update scripts.
 # Callers must set: TOOL, FLAKE_ROOT (absolute path).
 

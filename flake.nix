@@ -15,9 +15,9 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       flake-utils,
+      ...
     }:
     # Linux plus Apple Silicon macOS. Darwin browser archives are currently
     # pinned against the GitHub Actions macOS 15 arm64 runner image.

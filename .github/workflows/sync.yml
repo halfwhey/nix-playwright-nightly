@@ -1,5 +1,4 @@
 name: sync
-
 on:
   schedule:
     # Once a day at 03:17 UTC. Each run checks the current upstream latest
@@ -12,11 +11,9 @@ on:
         required: false
         default: false
         type: boolean
-
 concurrency:
   group: sync
   cancel-in-progress: false
-
 jobs:
   sync-latest:
     runs-on: ubuntu-latest
@@ -38,23 +35,19 @@ jobs:
           ref: main
           # Use the workflow token so the subsequent push is authenticated.
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-
       - uses: cachix/cachix-action@v15
         with:
           name: halfwhey
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
-
       - name: Configure git identity
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
       # Update each tool to the current upstream latest only. If any step
       # fails we stop and let a human investigate.
       - name: Update cli
@@ -70,7 +63,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Update mcp
         id: update-mcp
         run: |
@@ -84,7 +76,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Update node
         id: update-node
         run: |
@@ -98,7 +89,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Update dotnet
         id: update-dotnet
         run: |
@@ -112,7 +102,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Update python
         id: update-python
         run: |
@@ -126,7 +115,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Detect changes
         id: detect-changes
         run: |
@@ -150,7 +138,6 @@ jobs:
             echo "push_browsers=false" >> "$GITHUB_OUTPUT"
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
       - name: Push and pin latest browser closures
         if: steps.detect-changes.outputs.push_browsers == 'true'
         run: |
@@ -168,11 +155,9 @@ jobs:
           ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
       - name: Push commits
         if: steps.detect-changes.outputs.changed == 'true'
         run: git push origin HEAD:main
-
   push-arm-browser-cache:
     needs: sync-latest
     if: needs.sync-latest.outputs.push_browsers == 'true'
@@ -182,18 +167,15 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ needs.sync-latest.outputs.synced_sha }}
-
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-
       - uses: cachix/cachix-action@v15
         with:
           name: halfwhey
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
-
       - name: Push and pin latest browser closures
         run: |
           tools=()
@@ -210,7 +192,6 @@ jobs:
           ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
   push-darwin-browser-cache:
     needs: sync-latest
     if: needs.sync-latest.outputs.push_browsers == 'true'
@@ -220,19 +201,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ needs.sync-latest.outputs.synced_sha }}
-
       - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             experimental-features = nix-command flakes
-
       - uses: cachix/cachix-action@v15
         with:
           name: halfwhey
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
-
       - name: Push and pin latest browser closures
         run: |
           tools=()

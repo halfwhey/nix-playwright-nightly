@@ -1,45 +1,35 @@
 name: ci
-
 # Manually triggered only. Runs `nix flake check` plus a smoke test of each
 # latest alias on the x86_64-linux runner, to complement local aarch64
 # development. Push this button from the Actions tab (or `gh workflow run
 # ci.yml`) whenever you want to prove a change holds on x86_64-linux.
 on:
   workflow_dispatch:
-
 jobs:
   flake-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-
       - uses: cachix/cachix-action@v15
         with:
           name: halfwhey
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-
       - name: nix flake check
         run: nix flake check --no-write-lock-file
-
       # `nix run .#X -- --version` realises the derivation, runs its
       # mainProgram with --version, and exits. Replaces the old
       # build-then-run pattern (which built each package twice).
       - name: Smoke test playwright-cli
         run: nix run --no-write-lock-file .#playwright-cli -- --version
-
       - name: Smoke test playwright-mcp
         run: nix run --no-write-lock-file .#playwright-mcp -- --version
-
       - name: Smoke test playwright-node
         run: nix run --no-write-lock-file .#playwright-node -- --version
-
       - name: Smoke test playwright-dotnet
         run: nix run --no-write-lock-file .#playwright-dotnet -- --version
-
       - name: Smoke test playwright-python
         run: nix run --no-write-lock-file .#playwright-python -- --version
