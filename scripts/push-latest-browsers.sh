@@ -12,19 +12,22 @@ shift
 KEEP_REVISIONS=1
 if [ "$#" -gt 0 ]; then
   case "$1" in
-    ''|*[!0-9]*)
-      ;;
-    *)
-      KEEP_REVISIONS="$1"
-      shift
-      ;;
+  '' | *[!0-9]*)
+    ;;
+  *)
+    KEEP_REVISIONS="$1"
+    shift
+    ;;
   esac
 fi
 FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SYSTEM="$(nix eval --raw --impure --expr builtins.currentSystem)"
 
 log() { printf '[cachix:latest-browsers] %s\n' "$*" >&2; }
-die() { log "ERROR: $*"; exit 1; }
+die() {
+  log "ERROR: $*"
+  exit 1
+}
 
 command -v nix >/dev/null 2>&1 || die "missing required command: nix"
 command -v cachix >/dev/null 2>&1 || die "missing required command: cachix"
@@ -43,31 +46,31 @@ push_and_pin() {
 
 resolve_tool() {
   case "$1" in
-    cli)
-      RESOLVED_PIN_NAME="playwright-cli-browsers-${SYSTEM}"
-      RESOLVED_ATTR=".#playwright-cli-browsers"
-      ;;
-    dotnet)
-      RESOLVED_PIN_NAME="playwright-dotnet-browsers-${SYSTEM}"
-      RESOLVED_ATTR=".#playwright-dotnet-browsers"
-      ;;
-    mcp)
-      RESOLVED_PIN_NAME="playwright-mcp-browsers-${SYSTEM}"
-      RESOLVED_ATTR=".#playwright-mcp-browsers"
-      ;;
-    node)
-      RESOLVED_PIN_NAME="playwright-node-browsers-${SYSTEM}"
-      RESOLVED_ATTR=".#playwright-node-browsers"
-      ;;
-    python)
-      RESOLVED_PIN_NAME="playwright-python-browsers-${SYSTEM}"
-      RESOLVED_ATTR=".#playwright-python-browsers"
-      ;;
-    camoufox)
-      RESOLVED_PIN_NAME="camoufox-browsers-${SYSTEM}"
-      RESOLVED_ATTR=".#camoufox-browsers"
-      ;;
-    *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python|camoufox)" ;;
+  cli)
+    RESOLVED_PIN_NAME="playwright-cli-browsers-${SYSTEM}"
+    RESOLVED_ATTR=".#playwright-cli-browsers"
+    ;;
+  dotnet)
+    RESOLVED_PIN_NAME="playwright-dotnet-browsers-${SYSTEM}"
+    RESOLVED_ATTR=".#playwright-dotnet-browsers"
+    ;;
+  mcp)
+    RESOLVED_PIN_NAME="playwright-mcp-browsers-${SYSTEM}"
+    RESOLVED_ATTR=".#playwright-mcp-browsers"
+    ;;
+  node)
+    RESOLVED_PIN_NAME="playwright-node-browsers-${SYSTEM}"
+    RESOLVED_ATTR=".#playwright-node-browsers"
+    ;;
+  python)
+    RESOLVED_PIN_NAME="playwright-python-browsers-${SYSTEM}"
+    RESOLVED_ATTR=".#playwright-python-browsers"
+    ;;
+  camoufox)
+    RESOLVED_PIN_NAME="camoufox-browsers-${SYSTEM}"
+    RESOLVED_ATTR=".#camoufox-browsers"
+    ;;
+  *) die "unknown tool '$1' (expected cli|dotnet|mcp|node|python|camoufox)" ;;
   esac
 }
 

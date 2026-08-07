@@ -29,8 +29,8 @@ fetch_pypi_json() {
 prefetch_file_hash() {
   local url="$1"
   local out
-  out=$(nix store prefetch-file --json --hash-type sha256 "$url") \
-    || die "prefetch failed for $url"
+  out=$(nix store prefetch-file --json --hash-type sha256 "$url") ||
+    die "prefetch failed for $url"
   printf '%s' "$out" | jq -r '.hash'
 }
 
@@ -59,9 +59,9 @@ if [ "$package_version" != "$upstream_latest" ]; then
   package_json=$(fetch_pypi_json "$package_version")
 fi
 
-sdist_url=$(printf '%s' "$package_json" \
-  | jq -r '.urls[] | select(.packagetype == "sdist") | .url' \
-  | head -n1)
+sdist_url=$(printf '%s' "$package_json" |
+  jq -r '.urls[] | select(.packagetype == "sdist") | .url' |
+  head -n1)
 if [ -z "$sdist_url" ]; then
   die "could not find sdist for ${PYPI_NAME} ${package_version}"
 fi
@@ -74,8 +74,8 @@ jq -n \
   --arg pypi "$PYPI_NAME" \
   --arg url "$sdist_url" \
   --arg hash "$hash" \
-  '{ package: $package, pypi: $pypi, url: $url, hash: $hash }' \
-| write_pin_file "$package_version"
+  '{ package: $package, pypi: $pypi, url: $url, hash: $hash }' |
+  write_pin_file "$package_version"
 
 update_manifest "$package_version" "$is_latest"
 

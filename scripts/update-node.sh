@@ -18,8 +18,8 @@ export TOOL FLAKE_ROOT
 require_cmd curl jq nix git
 
 log "resolving upstream latest playwright from npm"
-upstream_latest=$(curl -fsSL "https://registry.npmjs.org/playwright" \
-  | jq -r '.["dist-tags"].latest')
+upstream_latest=$(curl -fsSL "https://registry.npmjs.org/playwright" |
+  jq -r '.["dist-tags"].latest')
 if [ -z "$upstream_latest" ] || [ "$upstream_latest" = "null" ]; then
   die "could not resolve upstream latest for playwright"
 fi
@@ -38,8 +38,8 @@ fi
 
 log "resolving playwright@${package_version} -> playwright-core version + gitHead"
 node_meta=$(curl -fsSL "https://registry.npmjs.org/playwright/${package_version}")
-playwright_version=$(printf '%s' "$node_meta" \
-  | jq -r '.dependencies["playwright-core"] // empty')
+playwright_version=$(printf '%s' "$node_meta" |
+  jq -r '.dependencies["playwright-core"] // empty')
 if [ -z "$playwright_version" ]; then
   die "could not resolve dependencies.playwright-core for playwright@${package_version}"
 fi
@@ -91,8 +91,8 @@ jq -n \
      packageHash: $packageHash,
      coreHash: $coreHash,
      browsers: $browsers
-   }' \
-| write_pin_file "$package_version"
+   }' |
+  write_pin_file "$package_version"
 
 update_manifest "$package_version" "$is_latest"
 

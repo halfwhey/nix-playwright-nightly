@@ -156,84 +156,84 @@ if stdenv.hostPlatform.isDarwin then
     '';
   }
 else
-stdenv.mkDerivation {
-  name = "playwright-webkit-${revision}";
+  stdenv.mkDerivation {
+    name = "playwright-webkit-${revision}";
 
-  src = fetchzip {
-    url = "https://cdn.playwright.dev/builds/webkit/${revision}/webkit-${archSuffix}.zip";
-    stripRoot = false;
-    hash = hashes.${system} or throwSystem;
-  };
+    src = fetchzip {
+      url = "https://cdn.playwright.dev/builds/webkit/${revision}/webkit-${archSuffix}.zip";
+      stripRoot = false;
+      hash = hashes.${system} or throwSystem;
+    };
 
-  nativeBuildInputs = [
-    autoPatchelfHook
-    patchelfUnstable
-    makeWrapper
-  ];
+    nativeBuildInputs = [
+      autoPatchelfHook
+      patchelfUnstable
+      makeWrapper
+    ];
 
-  buildInputs = [
-    at-spi2-atk
-    cairo
-    flite
-    fontconfig.lib
-    freetype
-    glib
-    enchant
-    brotli
-    libjxl'
-    gst_all_1.gst-plugins-bad
-    gst_all_1.gst-plugins-base
-    gst_all_1.gstreamer
-    harfbuzz
-    harfbuzzFull
-    hyphen
-    icu70
-    lcms
-    libavif'
-    libbacktrace
-    libdrm
-    libepoxy
-    libevent
-    libgcc.lib
-    libgcrypt
-    libgpg-error
-    libjpeg8
-    libopus
-    libpng
-    libsoup_3
-    libtasn1
-    libwebp
-    libwpe
-    libwpe-fdo
-    libvpx'
-    libxml2
-    libxslt
-    libgbm
-    sqlite
-    systemdLibs
-    wayland-scanner
-    woff2.lib
-    libxkbcommon
-    zlib
-  ];
+    buildInputs = [
+      at-spi2-atk
+      cairo
+      flite
+      fontconfig.lib
+      freetype
+      glib
+      enchant
+      brotli
+      libjxl'
+      gst_all_1.gst-plugins-bad
+      gst_all_1.gst-plugins-base
+      gst_all_1.gstreamer
+      harfbuzz
+      harfbuzzFull
+      hyphen
+      icu70
+      lcms
+      libavif'
+      libbacktrace
+      libdrm
+      libepoxy
+      libevent
+      libgcc.lib
+      libgcrypt
+      libgpg-error
+      libjpeg8
+      libopus
+      libpng
+      libsoup_3
+      libtasn1
+      libwebp
+      libwpe
+      libwpe-fdo
+      libvpx'
+      libxml2
+      libxslt
+      libgbm
+      sqlite
+      systemdLibs
+      wayland-scanner
+      woff2.lib
+      libxkbcommon
+      zlib
+    ];
 
-  patchelfFlags = [ "--no-clobber-old-sections" ];
+    patchelfFlags = [ "--no-clobber-old-sections" ];
 
-  buildPhase = ''
-    cp -R . $out
+    buildPhase = ''
+      cp -R . $out
 
-    # Drop unused gtk minibrowser and bundled system libs.
-    rm -rf $out/minibrowser-gtk
-    rm -rf $out/minibrowser-wpe/sys
+      # Drop unused gtk minibrowser and bundled system libs.
+      rm -rf $out/minibrowser-gtk
+      rm -rf $out/minibrowser-wpe/sys
 
-    wrapProgram $out/minibrowser-wpe/bin/MiniBrowser \
-      --prefix GIO_EXTRA_MODULES ":" "${glib-networking}/lib/gio/modules/" \
-      --prefix LD_LIBRARY_PATH ":" $out/minibrowser-wpe/lib
-  '';
+      wrapProgram $out/minibrowser-wpe/bin/MiniBrowser \
+        --prefix GIO_EXTRA_MODULES ":" "${glib-networking}/lib/gio/modules/" \
+        --prefix LD_LIBRARY_PATH ":" $out/minibrowser-wpe/lib
+    '';
 
-  preFixup = ''
-    # Fix libxml2 breakage. See https://github.com/NixOS/nixpkgs/pull/396195#issuecomment-2881757108
-    mkdir -p "$out/lib"
-    ln -s "${lib.getLib libxml2}/lib/libxml2.so" "$out/lib/libxml2.so.2"
-  '';
-}
+    preFixup = ''
+      # Fix libxml2 breakage. See https://github.com/NixOS/nixpkgs/pull/396195#issuecomment-2881757108
+      mkdir -p "$out/lib"
+      ln -s "${lib.getLib libxml2}/lib/libxml2.so" "$out/lib/libxml2.so.2"
+    '';
+  }

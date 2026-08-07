@@ -17,7 +17,10 @@ MANIFEST_FILE="${FLAKE_ROOT}/pins/pin.json"
 SUPPORTED_SYSTEMS=(x86_64-linux aarch64-linux aarch64-darwin)
 
 log() { printf '[%s] %s\n' "${TOOL}" "$*" >&2; }
-die() { log "ERROR: $*"; exit 1; }
+die() {
+  log "ERROR: $*"
+  exit 1
+}
 
 require_cmd() {
   for c in "$@"; do
@@ -34,8 +37,8 @@ require_cmd() {
 if [ -z "${UPDATE_SCRIPT_NIX_SHELL_READY:-}" ]; then
   require_cmd nix jq
   _nixpkgs_rev=$(jq -r '.nodes.nixpkgs.locked.rev' "${FLAKE_ROOT}/flake.lock")
-  [ -n "$_nixpkgs_rev" ] && [ "$_nixpkgs_rev" != "null" ] \
-    || die "could not read nixpkgs rev from ${FLAKE_ROOT}/flake.lock"
+  [ -n "$_nixpkgs_rev" ] && [ "$_nixpkgs_rev" != "null" ] ||
+    die "could not read nixpkgs rev from ${FLAKE_ROOT}/flake.lock"
   _nixpkgs_ref="github:NixOS/nixpkgs/${_nixpkgs_rev}"
   log "entering nix shell with prefetch tools from ${_nixpkgs_ref}"
   export UPDATE_SCRIPT_NIX_SHELL_READY=1
@@ -80,44 +83,44 @@ parse_browsers_json() {
 browser_url() {
   local name="$1" revision="$2" browserVersion="$3" system="$4"
   case "$name" in
-    chromium)
-      case "$system" in
-        x86_64-linux)  printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-linux64.zip' "$browserVersion" ;;
-        aarch64-linux) printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-linux-arm64.zip' "$revision" ;;
-        aarch64-darwin) printf 'https://cdn.playwright.dev/builds/cft/%s/mac-arm64/chrome-mac-arm64.zip' "$browserVersion" ;;
-      esac
-      ;;
-    chromium-headless-shell)
-      case "$system" in
-        x86_64-linux)  printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-headless-shell-linux64.zip' "$browserVersion" ;;
-        aarch64-linux) printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-headless-shell-linux-arm64.zip' "$revision" ;;
-        aarch64-darwin) printf 'https://cdn.playwright.dev/builds/cft/%s/mac-arm64/chrome-headless-shell-mac-arm64.zip' "$browserVersion" ;;
-      esac
-      ;;
-    firefox)
-      case "$system" in
-        x86_64-linux)  printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-ubuntu-22.04.zip' "$revision" ;;
-        aarch64-linux) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-ubuntu-22.04-arm64.zip' "$revision" ;;
-        aarch64-darwin) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-mac-arm64.zip' "$revision" ;;
-      esac
-      ;;
-    webkit)
-      case "$system" in
-        x86_64-linux)  printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-ubuntu-22.04.zip' "$revision" ;;
-        aarch64-linux) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-ubuntu-22.04-arm64.zip' "$revision" ;;
-        aarch64-darwin) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-mac-15-arm64.zip' "$revision" ;;
-      esac
-      ;;
-    ffmpeg)
-      case "$system" in
-        x86_64-linux)  printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-linux.zip' "$revision" ;;
-        aarch64-linux) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-linux-arm64.zip' "$revision" ;;
-        aarch64-darwin) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-mac-arm64.zip' "$revision" ;;
-      esac
-      ;;
-    *)
-      die "browser_url: unknown browser $name"
-      ;;
+  chromium)
+    case "$system" in
+    x86_64-linux) printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-linux64.zip' "$browserVersion" ;;
+    aarch64-linux) printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-linux-arm64.zip' "$revision" ;;
+    aarch64-darwin) printf 'https://cdn.playwright.dev/builds/cft/%s/mac-arm64/chrome-mac-arm64.zip' "$browserVersion" ;;
+    esac
+    ;;
+  chromium-headless-shell)
+    case "$system" in
+    x86_64-linux) printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-headless-shell-linux64.zip' "$browserVersion" ;;
+    aarch64-linux) printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-headless-shell-linux-arm64.zip' "$revision" ;;
+    aarch64-darwin) printf 'https://cdn.playwright.dev/builds/cft/%s/mac-arm64/chrome-headless-shell-mac-arm64.zip' "$browserVersion" ;;
+    esac
+    ;;
+  firefox)
+    case "$system" in
+    x86_64-linux) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-ubuntu-22.04.zip' "$revision" ;;
+    aarch64-linux) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-ubuntu-22.04-arm64.zip' "$revision" ;;
+    aarch64-darwin) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-mac-arm64.zip' "$revision" ;;
+    esac
+    ;;
+  webkit)
+    case "$system" in
+    x86_64-linux) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-ubuntu-22.04.zip' "$revision" ;;
+    aarch64-linux) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-ubuntu-22.04-arm64.zip' "$revision" ;;
+    aarch64-darwin) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-mac-15-arm64.zip' "$revision" ;;
+    esac
+    ;;
+  ffmpeg)
+    case "$system" in
+    x86_64-linux) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-linux.zip' "$revision" ;;
+    aarch64-linux) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-linux-arm64.zip' "$revision" ;;
+    aarch64-darwin) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-mac-arm64.zip' "$revision" ;;
+    esac
+    ;;
+  *)
+    die "browser_url: unknown browser $name"
+    ;;
   esac
 }
 
@@ -126,8 +129,8 @@ browser_url() {
 strip_root_false() {
   local name="$1" system="$2"
   case "${name}:${system}" in
-    chromium-headless-shell:*|webkit:*|ffmpeg:*|chromium:aarch64-darwin|firefox:aarch64-darwin) return 0 ;;
-    *) return 1 ;;
+  chromium-headless-shell:* | webkit:* | ffmpeg:* | chromium:aarch64-darwin | firefox:aarch64-darwin) return 0 ;;
+  *) return 1 ;;
   esac
 }
 
@@ -142,33 +145,33 @@ strip_root_false() {
 prefetch_fetchzip_hash() {
   local url="$1" strip="$2"
   case "$strip" in
-    true)
-      local b32
-      b32=$(nix-prefetch-url --unpack "$url" 2>/dev/null) \
-        || die "prefetch failed for $url"
-      nix hash convert --to sri --hash-algo sha256 "$b32"
-      ;;
-    false)
-      local tmpdir archive extract hash
-      tmpdir=$(mktemp -d)
-      archive="${tmpdir}/archive.zip"
-      extract="${tmpdir}/extract"
-      mkdir "$extract"
-      if ! curl -fsSL "$url" -o "$archive"; then
-        rm -rf "$tmpdir"
-        die "fetch failed for $url"
-      fi
-      if ! unzip -q "$archive" -d "$extract"; then
-        rm -rf "$tmpdir"
-        die "unzip failed for $url"
-      fi
-      hash=$(nix hash path --type sha256 --sri "$extract")
+  true)
+    local b32
+    b32=$(nix-prefetch-url --unpack "$url" 2>/dev/null) ||
+      die "prefetch failed for $url"
+    nix hash convert --to sri --hash-algo sha256 "$b32"
+    ;;
+  false)
+    local tmpdir archive extract hash
+    tmpdir=$(mktemp -d)
+    archive="${tmpdir}/archive.zip"
+    extract="${tmpdir}/extract"
+    mkdir "$extract"
+    if ! curl -fsSL "$url" -o "$archive"; then
       rm -rf "$tmpdir"
-      printf '%s' "$hash"
-      ;;
-    *)
-      die "prefetch_fetchzip_hash: strip must be true|false, got '$strip'"
-      ;;
+      die "fetch failed for $url"
+    fi
+    if ! unzip -q "$archive" -d "$extract"; then
+      rm -rf "$tmpdir"
+      die "unzip failed for $url"
+    fi
+    hash=$(nix hash path --type sha256 --sri "$extract")
+    rm -rf "$tmpdir"
+    printf '%s' "$hash"
+    ;;
+  *)
+    die "prefetch_fetchzip_hash: strip must be true|false, got '$strip'"
+    ;;
   esac
 }
 
@@ -180,8 +183,8 @@ prefetch_github_hash() {
   local owner="$1" repo="$2" rev="$3"
   local url="https://github.com/${owner}/${repo}/archive/${rev}.tar.gz"
   local out
-  out=$(nix store prefetch-file --json --unpack --hash-type sha256 "$url") \
-    || die "prefetch failed for github ${owner}/${repo}@${rev}"
+  out=$(nix store prefetch-file --json --unpack --hash-type sha256 "$url") ||
+    die "prefetch failed for github ${owner}/${repo}@${rev}"
   printf '%s' "$out" | jq -r '.hash'
 }
 
@@ -196,10 +199,10 @@ prefetch_npm_deps_hash() {
   trap 'rm -f "$lockfile"' RETURN
   curl -fsSL \
     "https://raw.githubusercontent.com/${owner}/${repo}/${rev}/package-lock.json" \
-    -o "$lockfile" \
-    || die "could not fetch package-lock.json for ${owner}/${repo}@${rev}"
-  prefetch-npm-deps "$lockfile" \
-    || die "prefetch-npm-deps failed for ${owner}/${repo}@${rev}"
+    -o "$lockfile" ||
+    die "could not fetch package-lock.json for ${owner}/${repo}@${rev}"
+  prefetch-npm-deps "$lockfile" ||
+    die "prefetch-npm-deps failed for ${owner}/${repo}@${rev}"
 }
 
 # Emit a JSON fragment `{ srcHash, npmDepsHash }` for an npm-based tool.
@@ -233,16 +236,16 @@ emit_python_pkg_hashes() {
   src=$(prefetch_github_hash "microsoft" "playwright-python" "v${package_version}")
   local driver_path=""
   case "$driver_version" in
-    *-alpha*|*-beta*|*-next*) driver_path="next/" ;;
+  *-alpha* | *-beta* | *-next*) driver_path="next/" ;;
   esac
   local driver_obj='{}'
   for sys in "${SUPPORTED_SYSTEMS[@]}"; do
     local zip_name
     case "$sys" in
-      x86_64-linux)  zip_name="linux" ;;
-      aarch64-linux) zip_name="linux-arm64" ;;
-      aarch64-darwin) zip_name="mac-arm64" ;;
-      *) die "unsupported system $sys" ;;
+    x86_64-linux) zip_name="linux" ;;
+    aarch64-linux) zip_name="linux-arm64" ;;
+    aarch64-darwin) zip_name="mac-arm64" ;;
+    *) die "unsupported system $sys" ;;
     esac
     log "prefetching playwright driver tarball for ${sys}"
     local url="https://cdn.playwright.dev/builds/driver/${driver_path}playwright-${driver_version}-${zip_name}.zip"
@@ -293,7 +296,7 @@ write_pin_file() {
   local file="${PIN_DIR}/${version}.json"
   local tmp="${file}.tmp"
   mkdir -p "$PIN_DIR"
-  jq . > "$tmp"
+  jq . >"$tmp"
   mv "$tmp" "$file"
 }
 
@@ -323,7 +326,7 @@ update_manifest() {
     | ($entry.versions | if any(.[]; . == $v) then . else . + [$v] end) as $new_versions
     | (if $is_latest == 1 then $v else $entry.latest end) as $new_latest
     | $m + { ($tool): { latest: $new_latest, versions: $new_versions } }
-    ' > "$tmp"
+    ' >"$tmp"
   mv "$tmp" "$MANIFEST_FILE"
 }
 

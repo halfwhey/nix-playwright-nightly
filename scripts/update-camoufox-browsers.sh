@@ -19,8 +19,8 @@ SUPPORTED_CAMOUFOX_SYSTEMS=(aarch64-linux)
 
 asset_suffix_for_system() {
   case "$1" in
-    aarch64-linux) printf 'lin.arm64' ;;
-    *) die "unsupported Camoufox system '$1'" ;;
+  aarch64-linux) printf 'lin.arm64' ;;
+  *) die "unsupported Camoufox system '$1'" ;;
   esac
 }
 
@@ -67,17 +67,17 @@ sources_obj='{}'
 for sys in "${SUPPORTED_CAMOUFOX_SYSTEMS[@]}"; do
   suffix=$(asset_suffix_for_system "$sys")
   asset_name="camoufox-${package_version}-${suffix}.zip"
-  url=$(printf '%s' "$release_json" \
-    | jq -r --arg name "$asset_name" '.assets[] | select(.name == $name) | .browser_download_url' \
-    | head -n1)
+  url=$(printf '%s' "$release_json" |
+    jq -r --arg name "$asset_name" '.assets[] | select(.name == $name) | .browser_download_url' |
+    head -n1)
   if [ -z "$url" ]; then
     die "could not find release asset ${asset_name}"
   fi
 
   log "prefetching Camoufox ${package_version} for ${sys}"
   hash=$(prefetch_fetchzip_hash "$url" "false")
-  sources_obj=$(printf '%s' "$sources_obj" \
-    | jq --arg sys "$sys" --arg suffix "$suffix" --arg url "$url" --arg hash "$hash" \
+  sources_obj=$(printf '%s' "$sources_obj" |
+    jq --arg sys "$sys" --arg suffix "$suffix" --arg url "$url" --arg hash "$hash" \
       '. + { ($sys): { suffix: $suffix, url: $url, hash: $hash } }')
 done
 
@@ -85,8 +85,8 @@ jq -n \
   --arg package "$package_version" \
   --arg tag "$tag" \
   --argjson sources "$sources_obj" \
-  '{ package: $package, tag: $tag, sources: $sources }' \
-| write_pin_file "$package_version"
+  '{ package: $package, tag: $tag, sources: $sources }' |
+  write_pin_file "$package_version"
 
 update_manifest "$package_version" "$is_latest"
 

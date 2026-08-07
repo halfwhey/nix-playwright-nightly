@@ -136,11 +136,13 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  appendRunpaths = lib.optionalString stdenv.hostPlatform.isLinux (lib.makeLibraryPath [
-    libGL
-    vulkan-loader
-    pciutils
-  ]);
+  appendRunpaths = lib.optionalString stdenv.hostPlatform.isLinux (
+    lib.makeLibraryPath [
+      libGL
+      vulkan-loader
+      pciutils
+    ]
+  );
 
   postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
     # Replace the bundled vulkan-loader with the one we already add to RPATH.

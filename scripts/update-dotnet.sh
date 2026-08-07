@@ -16,8 +16,8 @@ export TOOL FLAKE_ROOT
 require_cmd curl jq nix git unzip
 
 log "resolving upstream latest Microsoft.Playwright from NuGet"
-upstream_latest=$(curl -fsSL "https://api.nuget.org/v3-flatcontainer/microsoft.playwright/index.json" \
-  | jq -r '.versions | map(select(contains("-") | not)) | last // empty')
+upstream_latest=$(curl -fsSL "https://api.nuget.org/v3-flatcontainer/microsoft.playwright/index.json" |
+  jq -r '.versions | map(select(contains("-") | not)) | last // empty')
 if [ -z "$upstream_latest" ]; then
   die "could not resolve upstream latest for Microsoft.Playwright"
 fi
@@ -56,8 +56,8 @@ jq -n \
   --arg package "$package_version" \
   --arg packageHash "$package_hash" \
   --argjson browsers "$browsers_obj" \
-  '{ package: $package, packageHash: $packageHash, browsers: $browsers }' \
-| write_pin_file "$package_version"
+  '{ package: $package, packageHash: $packageHash, browsers: $browsers }' |
+  write_pin_file "$package_version"
 
 update_manifest "$package_version" "$is_latest"
 

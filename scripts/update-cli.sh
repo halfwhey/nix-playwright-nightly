@@ -18,8 +18,8 @@ export TOOL FLAKE_ROOT
 require_cmd curl jq nix git
 
 log "resolving upstream latest @playwright/cli from npm"
-upstream_latest=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli" \
-  | jq -r '.["dist-tags"].latest')
+upstream_latest=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli" |
+  jq -r '.["dist-tags"].latest')
 if [ -z "$upstream_latest" ] || [ "$upstream_latest" = "null" ]; then
   die "could not resolve upstream latest for @playwright/cli"
 fi
@@ -38,8 +38,8 @@ fi
 
 log "resolving @playwright/cli@${package_version} -> playwright-core version + gitHead"
 cli_meta=$(curl -fsSL "https://registry.npmjs.org/@playwright/cli/${package_version}")
-playwright_version=$(printf '%s' "$cli_meta" \
-  | jq -r '.dependencies.playwright // .dependencies["playwright-core"] // empty')
+playwright_version=$(printf '%s' "$cli_meta" |
+  jq -r '.dependencies.playwright // .dependencies["playwright-core"] // empty')
 if [ -z "$playwright_version" ]; then
   die "could not resolve dependencies.playwright for @playwright/cli@${package_version}"
 fi
@@ -55,8 +55,8 @@ fi
 log "playwright-cli SHA: $package_sha"
 
 log "resolving playwright@${playwright_version} -> gitHead SHA"
-playwright_sha=$(curl -fsSL "https://registry.npmjs.org/playwright/${playwright_version}" \
-  | jq -r '.gitHead // empty')
+playwright_sha=$(curl -fsSL "https://registry.npmjs.org/playwright/${playwright_version}" |
+  jq -r '.gitHead // empty')
 if [ -z "$playwright_sha" ]; then
   die "could not resolve gitHead for playwright@${playwright_version}"
 fi
@@ -77,8 +77,8 @@ jq -n \
   --argjson browsers "$browsers_obj" \
   '{ package: $package, packageSha: $packageSha, playwrightVersion: $playwrightVersion, playwrightSha: $playwrightSha }
    + $pkg_hashes
-   + { browsers: $browsers }' \
-| write_pin_file "$package_version"
+   + { browsers: $browsers }' |
+  write_pin_file "$package_version"
 
 update_manifest "$package_version" "$is_latest"
 

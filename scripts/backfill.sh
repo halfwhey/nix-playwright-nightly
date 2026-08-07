@@ -14,16 +14,19 @@ FLAKE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$FLAKE_ROOT"
 
 log() { printf '[backfill:%s] %s\n' "$TOOL" "$*" >&2; }
-die() { log "ERROR: $*"; exit 1; }
+die() {
+  log "ERROR: $*"
+  exit 1
+}
 
 case "$TOOL" in
-  cli|mcp)
-    pkg_name="@playwright/${TOOL}"
-    log "fetching npm registry metadata for ${pkg_name}"
-    meta=$(curl -fsSL "https://registry.npmjs.org/${pkg_name}")
-    # jq: pair each version with its publish time, drop dist-tag aliases,
-    # sort by time ascending. Emits <version><TAB><time> per line.
-    all_versions=$(printf '%s' "$meta" | jq -r '
+cli | mcp)
+  pkg_name="@playwright/${TOOL}"
+  log "fetching npm registry metadata for ${pkg_name}"
+  meta=$(curl -fsSL "https://registry.npmjs.org/${pkg_name}")
+  # jq: pair each version with its publish time, drop dist-tag aliases,
+  # sort by time ascending. Emits <version><TAB><time> per line.
+  all_versions=$(printf '%s' "$meta" | jq -r '
       .versions as $v
       | .time
       | to_entries
@@ -31,12 +34,12 @@ case "$TOOL" in
       | sort_by(.value)
       | .[] | "\(.key)\t\(.value)"
     ')
-    ;;
-  node)
-    pkg_name="playwright"
-    log "fetching npm registry metadata for ${pkg_name}"
-    meta=$(curl -fsSL "https://registry.npmjs.org/${pkg_name}")
-    all_versions=$(printf '%s' "$meta" | jq -r '
+  ;;
+node)
+  pkg_name="playwright"
+  log "fetching npm registry metadata for ${pkg_name}"
+  meta=$(curl -fsSL "https://registry.npmjs.org/${pkg_name}")
+  all_versions=$(printf '%s' "$meta" | jq -r '
       .versions as $v
       | .time
       | to_entries
@@ -44,31 +47,31 @@ case "$TOOL" in
       | sort_by(.value)
       | .[] | "\(.key)\t\(.value)"
     ')
-    ;;
-  dotnet)
-    log "fetching NuGet registration metadata for Microsoft.Playwright"
-    meta=$(curl -fsSL "https://api.nuget.org/v3/registration5-semver1/microsoft.playwright/index.json")
-    all_versions=$(
-      while IFS= read -r page; do
-        [ -z "$page" ] && continue
-        if printf '%s' "$page" | jq -e 'has("items")' >/dev/null; then
-          printf '%s\n' "$page"
-        else
-          lower=$(printf '%s' "$page" | jq -r '.lower')
-          upper=$(printf '%s' "$page" | jq -r '.upper')
-          curl -fsSL "https://api.nuget.org/v3/registration5-semver1/microsoft.playwright/page/${lower}/${upper}.json"
-        fi
-      done < <(printf '%s' "$meta" | jq -c '.items[]') | jq -rs '
+  ;;
+dotnet)
+  log "fetching NuGet registration metadata for Microsoft.Playwright"
+  meta=$(curl -fsSL "https://api.nuget.org/v3/registration5-semver1/microsoft.playwright/index.json")
+  all_versions=$(
+    while IFS= read -r page; do
+      [ -z "$page" ] && continue
+      if printf '%s' "$page" | jq -e 'has("items")' >/dev/null; then
+        printf '%s\n' "$page"
+      else
+        lower=$(printf '%s' "$page" | jq -r '.lower')
+        upper=$(printf '%s' "$page" | jq -r '.upper')
+        curl -fsSL "https://api.nuget.org/v3/registration5-semver1/microsoft.playwright/page/${lower}/${upper}.json"
+      fi
+    done < <(printf '%s' "$meta" | jq -c '.items[]') | jq -rs '
         map((.items // [])[] | .catalogEntry | select(.version | contains("-") | not) | { version, published })
         | sort_by(.published)
         | .[] | "\(.version)\t\(.published)"
       '
-    )
-    ;;
-  python)
-    log "fetching PyPI metadata for playwright"
-    meta=$(curl -fsSL "https://pypi.org/pypi/playwright/json")
-    all_versions=$(printf '%s' "$meta" | jq -r '
+  )
+  ;;
+python)
+  log "fetching PyPI metadata for playwright"
+  meta=$(curl -fsSL "https://pypi.org/pypi/playwright/json")
+  all_versions=$(printf '%s' "$meta" | jq -r '
       .releases
       | to_entries
       | map(select(.value | length > 0))
@@ -76,10 +79,10 @@ case "$TOOL" in
       | sort_by(.time)
       | .[] | "\(.version)\t\(.time)"
     ')
-    ;;
-  *)
-    die "unknown tool: $TOOL (expected cli|dotnet|mcp|node|python)"
-    ;;
+  ;;
+*)
+  die "unknown tool: $TOOL (expected cli|dotnet|mcp|node|python)"
+  ;;
 esac
 
 if [ -z "$all_versions" ]; then
@@ -138,6 +141,6 @@ while IFS= read -r version; do
   [ -z "$version" ] && continue
   log "running scripts/update-${TOOL}.sh $version"
   "${FLAKE_ROOT}/scripts/update-${TOOL}.sh" "$version"
-done <<< "$missing"
+done <<<"$missing"
 
 log "backfill complete for ${TOOL}"

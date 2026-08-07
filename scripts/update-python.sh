@@ -17,8 +17,8 @@ export TOOL FLAKE_ROOT
 require_cmd curl jq nix git
 
 log "resolving upstream latest playwright from PyPI"
-upstream_latest=$(curl -fsSL "https://pypi.org/pypi/playwright/json" \
-  | jq -r '.info.version')
+upstream_latest=$(curl -fsSL "https://pypi.org/pypi/playwright/json" |
+  jq -r '.info.version')
 if [ -z "$upstream_latest" ] || [ "$upstream_latest" = "null" ]; then
   die "could not resolve upstream latest for PyPI playwright"
 fi
@@ -55,8 +55,8 @@ log "playwright-core (driver) version: $driver_version"
 log "resolving playwright@${driver_version} -> gitHead SHA via npm"
 # npm's `playwright` package has the same SHA we need, regardless of whether
 # the driver is stable, alpha, beta, or next.
-playwright_sha=$(curl -fsSL "https://registry.npmjs.org/playwright/${driver_version}" \
-  | jq -r '.gitHead // empty')
+playwright_sha=$(curl -fsSL "https://registry.npmjs.org/playwright/${driver_version}" |
+  jq -r '.gitHead // empty')
 if [ -z "$playwright_sha" ]; then
   die "could not resolve gitHead for playwright@${driver_version}"
 fi
@@ -76,8 +76,8 @@ jq -n \
   --argjson browsers "$browsers_obj" \
   '{ package: $package, playwrightVersion: $playwrightVersion, playwrightSha: $playwrightSha }
    + $pkg_hashes
-   + { browsers: $browsers }' \
-| write_pin_file "$package_version"
+   + { browsers: $browsers }' |
+  write_pin_file "$package_version"
 
 update_manifest "$package_version" "$is_latest"
 

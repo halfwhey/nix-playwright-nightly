@@ -9,7 +9,8 @@
 }:
 
 let
-  browser = camoufox.browser or (throw "camoufox-playwright-cli: camoufox package is missing browser passthru");
+  browser =
+    camoufox.browser or (throw "camoufox-playwright-cli: camoufox package is missing browser passthru");
   browserExe = lib.getExe browser;
   config = writeText "camoufox-playwright-cli-config.json" (
     builtins.toJSON {
