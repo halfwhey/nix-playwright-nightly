@@ -15,6 +15,7 @@
   autoPatchelfHook,
   patchelfUnstable,
   libjxl,
+  libmanette,
   brotli,
   at-spi2-atk,
   cairo,
@@ -198,6 +199,7 @@ else
       libgcrypt
       libgpg-error
       libjpeg8
+      libmanette
       libopus
       libpng
       libsoup_3
