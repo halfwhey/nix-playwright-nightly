@@ -158,7 +158,7 @@ prefetch_fetchzip_hash() {
     archive="${tmpdir}/archive.zip"
     extract="${tmpdir}/extract"
     mkdir "$extract"
-    if ! curl -fsSL "$url" -o "$archive"; then
+    if ! curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL "$url" -o "$archive"; then
       rm -rf "$tmpdir"
       die "fetch failed for $url"
     fi
