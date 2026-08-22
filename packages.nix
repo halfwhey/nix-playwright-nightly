@@ -41,6 +41,7 @@ let
       version = pin.package;
       driverVersion = pin.playwrightVersion or pin.package;
       inherit (pin) srcHash driverHashes;
+      driverUrls = pin.driverUrls or null;
       browsers = mkBrowsers pin.browsers;
     };
 
