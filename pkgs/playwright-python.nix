@@ -49,6 +49,7 @@ let
           driverUrls.${system} or throwSystem
         else
           "https://cdn.playwright.dev/builds/driver/${lib.optionalString (lib.hasInfix "-" driverVersion) "next/"}playwright-${driverVersion}-${driverZipName}.zip";
+      extension = if driverSourceIsWheel then "zip" else null;
       stripRoot = false;
       hash = driverHashes.${system} or throwSystem;
     };
