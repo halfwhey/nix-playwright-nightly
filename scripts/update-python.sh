@@ -65,7 +65,7 @@ log "playwright-core SHA: $playwright_sha"
 log "fetching browsers.json at ${playwright_sha}"
 browsers_json=$(fetch_browsers_json "$playwright_sha")
 
-pkg_hashes=$(emit_python_pkg_hashes "$package_version" "$driver_version")
+pkg_hashes=$(emit_python_pkg_hashes "$package_version")
 browsers_obj=$(parse_browsers_json "$browsers_json" | emit_browsers_obj)
 
 jq -n \

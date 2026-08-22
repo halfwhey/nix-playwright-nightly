@@ -224,39 +224,47 @@ emit_npm_pkg_hashes() {
     '{ srcHash: $src, npmDepsHash: $npm }'
 }
 
-# Emit a JSON fragment `{ srcHash, driverHashes: { x86_64-linux, aarch64-linux } }`
-# for the python tool. The source tag uses the PyPI package version, while the
-# embedded driver may use a different playwright-core version. The driver
-# tarball lives at cdn.playwright.dev/builds/driver[/next] and is fetched per
-# arch (linux, linux-arm64, mac-arm64).
+# Emit a JSON fragment `{ srcHash, driverUrls, driverHashes }` for the Python
+# tool. Modern playwright-python releases assemble the driver while building
+# their platform wheels instead of publishing standalone driver archives, so
+# use the immutable wheel URLs from PyPI and extract the bundled driver later.
 emit_python_pkg_hashes() {
   local package_version="$1"
-  local driver_version="${2:-$package_version}"
   log "prefetching playwright-python v${package_version} src hash"
   local src
   src=$(prefetch_github_hash "microsoft" "playwright-python" "v${package_version}")
-  local driver_path=""
-  case "$driver_version" in
-  *-alpha* | *-beta* | *-next*) driver_path="next/" ;;
-  esac
+  local release
+  release=$(curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL \
+    "https://pypi.org/pypi/playwright/${package_version}/json") ||
+    die "could not fetch PyPI release metadata for playwright ${package_version}"
+  local urls_obj='{}'
   local driver_obj='{}'
   for sys in "${SUPPORTED_SYSTEMS[@]}"; do
-    local zip_name
+    local wheel_pattern
     case "$sys" in
-    x86_64-linux) zip_name="linux" ;;
-    aarch64-linux) zip_name="linux-arm64" ;;
-    aarch64-darwin) zip_name="mac-arm64" ;;
+    x86_64-linux) wheel_pattern='manylinux.*x86_64[.]whl$' ;;
+    aarch64-linux) wheel_pattern='manylinux.*aarch64[.]whl$' ;;
+    aarch64-darwin) wheel_pattern='macosx.*arm64[.]whl$' ;;
     *) die "unsupported system $sys" ;;
     esac
-    log "prefetching playwright driver tarball for ${sys}"
-    local url="https://cdn.playwright.dev/builds/driver/${driver_path}playwright-${driver_version}-${zip_name}.zip"
-    # pkgs/playwright-python.nix fetches the driver with stripRoot = false.
+    local url
+    url=$(printf '%s' "$release" | jq -er --arg pattern "$wheel_pattern" '
+      [
+        .urls[]
+        | select(.packagetype == "bdist_wheel")
+        | select(.filename | test($pattern))
+        | .url
+      ]
+      | if length == 1 then .[0] else error("expected exactly one matching wheel") end
+    ') || die "could not resolve a unique playwright ${package_version} wheel for ${sys}"
+    log "prefetching playwright wheel driver for ${sys}"
     local hash
     hash=$(prefetch_fetchzip_hash "$url" "false")
+    urls_obj=$(printf '%s' "$urls_obj" | jq --arg k "$sys" --arg v "$url" '. + { ($k): $v }')
     driver_obj=$(printf '%s' "$driver_obj" | jq --arg k "$sys" --arg v "$hash" '. + { ($k): $v }')
   done
-  jq -n --arg src "$src" --argjson driver "$driver_obj" \
-    '{ srcHash: $src, driverHashes: $driver }'
+  jq -n --arg src "$src" --argjson urls "$urls_obj" --argjson driver "$driver_obj" \
+    '{ srcHash: $src, driverUrls: $urls, driverHashes: $driver }'
 }
 
 # Given rows from parse_browsers_json on stdin, emit a JSON object keyed by

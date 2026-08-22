@@ -1,9 +1,9 @@
 # buildPythonPackage wrapper for PyPI playwright (microsoft/playwright-python),
-# bundled with the official pre-built JS driver tarball and the revision-matched
-# browsers from this flake's python pin.
+# bundled with the official JS driver from the platform-specific PyPI wheel and
+# the revision-matched browsers from this flake's Python pin.
 #
-# Driver tarball comes from cdn.playwright.dev/builds/driver. Each tarball ships
-# its own bundled node binary, which we autoPatchelfHook for NixOS.
+# Older pins without driverUrls retain the legacy standalone driver-archive
+# path. Each source ships its own Node binary, which we replace with nixpkgs'.
 {
   lib,
   stdenv,
@@ -18,12 +18,14 @@
   version,
   driverVersion ? version,
   srcHash,
+  driverUrls ? null,
   driverHashes,
   browsers,
 }:
 let
   inherit (stdenv.hostPlatform) system;
   throwSystem = throw "playwright-python: unsupported system ${system}";
+  driverSourceIsWheel = driverUrls != null;
   driverZipName =
     {
       x86_64-linux = "linux";
@@ -42,7 +44,11 @@ let
     version = driverVersion;
 
     src = fetchzip {
-      url = "https://cdn.playwright.dev/builds/driver/${lib.optionalString (lib.hasInfix "-" driverVersion) "next/"}playwright-${driverVersion}-${driverZipName}.zip";
+      url =
+        if driverSourceIsWheel then
+          driverUrls.${system} or throwSystem
+        else
+          "https://cdn.playwright.dev/builds/driver/${lib.optionalString (lib.hasInfix "-" driverVersion) "next/"}playwright-${driverVersion}-${driverZipName}.zip";
       stripRoot = false;
       hash = driverHashes.${system} or throwSystem;
     };
@@ -54,7 +60,7 @@ let
     installPhase = ''
       runHook preInstall
       mkdir -p $out
-      cp -R . $out/
+      ${if driverSourceIsWheel then "cp -R playwright/driver/. $out/" else "cp -R . $out/"}
       # Replace the bundled node with nixpkgs nodejs. The bundled aarch64
       # node segfaults on NixOS after autoPatchelfHook (likely a glibc or
       # stack-guard mismatch), and even on x86_64 the nixpkgs binary is the
