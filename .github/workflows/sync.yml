@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       force_push_latest_browsers:
-        description: "Push latest browser closures even if no pins changed"
+        description: "Push latest browser closures even if Cachix pins already match"
         required: false
         default: false
         type: boolean
@@ -19,12 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.detect-changes.outputs.changed }}
-      push_browsers: ${{ steps.detect-changes.outputs.push_browsers }}
-      cli_changed: ${{ steps.update-cli.outputs.changed }}
-      dotnet_changed: ${{ steps.update-dotnet.outputs.changed }}
-      mcp_changed: ${{ steps.update-mcp.outputs.changed }}
-      node_changed: ${{ steps.update-node.outputs.changed }}
-      python_changed: ${{ steps.update-python.outputs.changed }}
       synced_sha: ${{ steps.detect-changes.outputs.sha }}
     permissions:
       contents: write
@@ -35,6 +29,9 @@ jobs:
           ref: main
           # Use the workflow token so the subsequent push is authenticated.
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Record starting revision
+        id: starting-revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
@@ -51,116 +48,44 @@ jobs:
       # Update each tool to the current upstream latest only. If any step
       # fails we stop and let a human investigate.
       - name: Update cli
-        id: update-cli
-        run: |
-          before=$(git rev-parse HEAD)
-          ./scripts/update-cli.sh
-          after=$(git rev-parse HEAD)
-          if [ "$after" = "$before" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: ./scripts/update-cli.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update mcp
-        id: update-mcp
-        run: |
-          before=$(git rev-parse HEAD)
-          ./scripts/update-mcp.sh
-          after=$(git rev-parse HEAD)
-          if [ "$after" = "$before" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: ./scripts/update-mcp.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update node
-        id: update-node
-        run: |
-          before=$(git rev-parse HEAD)
-          ./scripts/update-node.sh
-          after=$(git rev-parse HEAD)
-          if [ "$after" = "$before" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: ./scripts/update-node.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update dotnet
-        id: update-dotnet
-        run: |
-          before=$(git rev-parse HEAD)
-          ./scripts/update-dotnet.sh
-          after=$(git rev-parse HEAD)
-          if [ "$after" = "$before" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: ./scripts/update-dotnet.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update python
-        id: update-python
-        run: |
-          before=$(git rev-parse HEAD)
-          ./scripts/update-python.sh
-          after=$(git rev-parse HEAD)
-          if [ "$after" = "$before" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: ./scripts/update-python.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Detect changes
         id: detect-changes
         run: |
-          if [ "${{ steps.update-cli.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-python.outputs.changed }}" = "true" ]; then
+          if [ "$(git rev-parse HEAD)" != "${{ steps.starting-revision.outputs.sha }}" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
-          if [ "${{ steps.update-cli.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-node.outputs.changed }}" = "true" ] || \
-             [ "${{ steps.update-python.outputs.changed }}" = "true" ] || \
-             { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_push_latest_browsers }}" = "true" ]; }; then
-            echo "push_browsers=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "push_browsers=false" >> "$GITHUB_OUTPUT"
-          fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Push and pin latest browser closures
-        if: steps.detect-changes.outputs.push_browsers == 'true'
-        run: |
-          tools=()
-          [ "${{ steps.update-cli.outputs.changed }}" = "true" ] && tools+=(cli)
-          [ "${{ steps.update-dotnet.outputs.changed }}" = "true" ] && tools+=(dotnet)
-          [ "${{ steps.update-mcp.outputs.changed }}" = "true" ] && tools+=(mcp)
-          [ "${{ steps.update-node.outputs.changed }}" = "true" ] && tools+=(node)
-          [ "${{ steps.update-python.outputs.changed }}" = "true" ] && tools+=(python)
-          if [ "${#tools[@]}" -eq 0 ] && \
-             { [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force_push_latest_browsers }}" != "true" ]; }; then
-            echo "No x86_64-linux browser closures to push"
-            exit 0
-          fi
-          ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
+        run: ./scripts/push-latest-browsers.sh halfwhey 1 cli dotnet mcp node python
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          FORCE: ${{ inputs.force_push_latest_browsers && '1' || '0' }}
       - name: Push commits
         if: steps.detect-changes.outputs.changed == 'true'
         run: git push origin HEAD:main
   push-arm-browser-cache:
     needs: sync-latest
-    if: needs.sync-latest.outputs.push_browsers == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -177,24 +102,12 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
       - name: Push and pin latest browser closures
-        run: |
-          tools=()
-          [ "${{ needs.sync-latest.outputs.cli_changed }}" = "true" ] && tools+=(cli)
-          [ "${{ needs.sync-latest.outputs.dotnet_changed }}" = "true" ] && tools+=(dotnet)
-          [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
-          [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
-          [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
-          if [ "${#tools[@]}" -eq 0 ] && \
-             { [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force_push_latest_browsers }}" != "true" ]; }; then
-            echo "No aarch64-linux browser closures to push"
-            exit 0
-          fi
-          ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
+        run: ./scripts/push-latest-browsers.sh halfwhey 1 cli dotnet mcp node python
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          FORCE: ${{ inputs.force_push_latest_browsers && '1' || '0' }}
   push-darwin-browser-cache:
     needs: sync-latest
-    if: needs.sync-latest.outputs.push_browsers == 'true'
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
@@ -212,18 +125,7 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
       - name: Push and pin latest browser closures
-        run: |
-          tools=()
-          [ "${{ needs.sync-latest.outputs.cli_changed }}" = "true" ] && tools+=(cli)
-          [ "${{ needs.sync-latest.outputs.dotnet_changed }}" = "true" ] && tools+=(dotnet)
-          [ "${{ needs.sync-latest.outputs.mcp_changed }}" = "true" ] && tools+=(mcp)
-          [ "${{ needs.sync-latest.outputs.node_changed }}" = "true" ] && tools+=(node)
-          [ "${{ needs.sync-latest.outputs.python_changed }}" = "true" ] && tools+=(python)
-          if [ "${#tools[@]}" -eq 0 ] && \
-             { [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ inputs.force_push_latest_browsers }}" != "true" ]; }; then
-            echo "No aarch64-darwin browser closures to push"
-            exit 0
-          fi
-          ./scripts/push-latest-browsers.sh halfwhey 1 "${tools[@]}"
+        run: ./scripts/push-latest-browsers.sh halfwhey 1 cli dotnet mcp node python
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          FORCE: ${{ inputs.force_push_latest_browsers && '1' || '0' }}

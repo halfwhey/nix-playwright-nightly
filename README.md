@@ -227,9 +227,29 @@ nix build \
 ```
 
 Current cache coverage (excluding camoufox):
+
 - `x86_64-linux` via `ubuntu-latest`
 - `aarch64-linux` via `ubuntu-24.04-arm`
 - `aarch64-darwin` via `macos-26`
+
+The daily sync reconciles all five latest Playwright browser outputs on every
+supported runner, even when no package pin changed in that workflow run. For
+each tool, `scripts/push-latest-browsers.sh` evaluates the current browser
+output and compares its store path with the corresponding public Cachix pin.
+Matching pins are skipped; missing or stale pins are built, pushed, and updated.
+If the Cachix pin API cannot be read or validated, the script treats the cache
+state as unknown and pushes rather than risking a false skip.
+
+Inspect the decisions without building or changing Cachix:
+
+```sh
+./scripts/push-latest-browsers.sh --dry-run halfwhey 1 cli dotnet mcp node python
+```
+
+Set `FORCE=1` to bypass pin comparison. The `force_push_latest_browsers` input
+on a manual `sync.yml` dispatch maps to that setting. Pushing to Cachix and
+dispatching workflows are maintainer actions; neither is part of local
+validation.
 
 ## Manual bumps
 
@@ -246,7 +266,11 @@ Current cache coverage (excluding camoufox):
 
 Each Playwright script resolves the matching `playwright-core` version, prefetches all hashes, writes the pin file, and commits. Camoufox scripts track the browser GitHub release and the PyPI wrapper independently. Re-running with an already-pinned version is a no-op.
 
-CI runs the same update flow once a day. See `.github/workflows/sync.yml`.
+CI runs the same update flow once a day, then reconciles all latest Playwright
+browser closures with their per-system Cachix pins. The x86_64-linux cache
+reconciliation runs before any generated pin commits are pushed to `main`; the
+Arm Linux and Darwin jobs check out that synchronized revision and perform the
+same reconciliation. See `.github/workflows/sync.yml`.
 
 ## Acknowledgement
 
