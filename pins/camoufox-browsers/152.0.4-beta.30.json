@@ -1,0 +1,11 @@
+{
+  "package": "152.0.4-beta.30",
+  "tag": "v152.0.4-beta.30",
+  "sources": {
+    "aarch64-linux": {
+      "suffix": "lin.arm64",
+      "url": "https://github.com/daijro/camoufox/releases/download/v152.0.4-beta.30/camoufox-152.0.4-beta.30-lin.arm64.zip",
+      "hash": "sha256-Gc/sa6PeDGfZQaC1qwrdZZmegVfQoa4cAIW/BGPwyIg="
+    }
+  }
+}
