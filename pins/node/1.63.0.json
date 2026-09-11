@@ -1,0 +1,52 @@
+{
+  "package": "1.63.0",
+  "playwrightVersion": "1.63.0",
+  "packageHash": "sha256-ReNmDhL9ImD5vSohnIq8d7XyAbu2BDPevxW3EFwcClc=",
+  "coreHash": "sha256-SCzo+agWqC0wfkc/98mk2C2Fs3kVLoq2nQtBOjo2KK0=",
+  "browsers": {
+    "chromium": {
+      "revision": "1243",
+      "browserVersion": "153.0.8010.12",
+      "hashes": {
+        "x86_64-linux": "sha256-ORdMu1e4Peolr8rdfvzgeaFhC8RgBipaOsAm7e3ZeqE=",
+        "aarch64-linux": "sha256-2JRLR1h189ApHRu77O6YmigQpqO2rXu3InM/qrzwX/c=",
+        "aarch64-darwin": "sha256-Zm7aHjwXL0kbucBiNoWxBM6rFdY0UmVIwcr/f8V31G8="
+      }
+    },
+    "chromium-headless-shell": {
+      "revision": "1243",
+      "browserVersion": "153.0.8010.12",
+      "hashes": {
+        "x86_64-linux": "sha256-GLqqZOwtnJig+ZCIT8FYsIxZGSFTmRwLbqNXeSOdJXA=",
+        "aarch64-linux": "sha256-FiK+GGxiDHjwj/JeOh4FZPYYclogjAxfEDcpJ4Fjoqc=",
+        "aarch64-darwin": "sha256-Elbpy5UDVndRzWRi8Nb391AhAAYl55PJ/3Fxz/RI/4I="
+      }
+    },
+    "firefox": {
+      "revision": "1543",
+      "browserVersion": "155.0",
+      "hashes": {
+        "x86_64-linux": "sha256-BjHG5EQBG/Us9nG4nMYnW9NAMx8HkdDA0xy37WA2AX4=",
+        "aarch64-linux": "sha256-8FPCRHi4eoL8d466bpMfwS1bZqqLpHu7ERGcMsVF0Wo=",
+        "aarch64-darwin": "sha256-mFCMrL5PMX5C0Ob/tKKfbZfZJwF5QDM0rhS7v/P3IUw="
+      }
+    },
+    "webkit": {
+      "revision": "2359",
+      "browserVersion": "26.6",
+      "hashes": {
+        "x86_64-linux": "sha256-crAGjTjxgbcNr5S4YBkw51+XMIToxz/fcwqenlhhNr8=",
+        "aarch64-linux": "sha256-Zmg4b2IH+b9mvppvEydheaMlUpvF5sGNk7DYTTvl9xM=",
+        "aarch64-darwin": "sha256-EjI0TdmQfB2qT2bBtbJFpsa+bplkJ5YyyVxNoOgsnZc="
+      }
+    },
+    "ffmpeg": {
+      "revision": "1011",
+      "hashes": {
+        "x86_64-linux": "sha256-AWTiui+ccKHxsIaQSgc5gWCJT5gYwIWzAEqSuKgVqZU=",
+        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q=",
+        "aarch64-darwin": "sha256-ky10UQj+XPVGpaWAPvKd51C5brml0y9xQ6iKcrxAMRc="
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "package": "0.1.19",
+  "packageSha": "397ee39c83a651e1314cfb010b94e8a3aac11261",
+  "playwrightVersion": "1.63.0-alpha-2026-08-31",
+  "srcHash": "sha256-pbv51ybubbjoIpKg0k7lfXfZ9Z+qdZI2lRhQeI+/mFA=",
+  "npmDepsHash": "sha256-aY3i+sc2p8iQAEpfs+j/ifeBVmMpDDmwctEqOIDmCqI=",
+  "browsers": {
+    "chromium": {
+      "revision": "1243",
+      "browserVersion": "153.0.8010.12",
+      "hashes": {
+        "x86_64-linux": "sha256-ORdMu1e4Peolr8rdfvzgeaFhC8RgBipaOsAm7e3ZeqE=",
+        "aarch64-linux": "sha256-2JRLR1h189ApHRu77O6YmigQpqO2rXu3InM/qrzwX/c=",
+        "aarch64-darwin": "sha256-Zm7aHjwXL0kbucBiNoWxBM6rFdY0UmVIwcr/f8V31G8="
+      }
+    },
+    "chromium-headless-shell": {
+      "revision": "1243",
+      "browserVersion": "153.0.8010.12",
+      "hashes": {
+        "x86_64-linux": "sha256-GLqqZOwtnJig+ZCIT8FYsIxZGSFTmRwLbqNXeSOdJXA=",
+        "aarch64-linux": "sha256-FiK+GGxiDHjwj/JeOh4FZPYYclogjAxfEDcpJ4Fjoqc=",
+        "aarch64-darwin": "sha256-Elbpy5UDVndRzWRi8Nb391AhAAYl55PJ/3Fxz/RI/4I="
+      }
+    },
+    "firefox": {
+      "revision": "1542",
+      "browserVersion": "155.0",
+      "hashes": {
+        "x86_64-linux": "sha256-KD16ypQeKF6PESaph5gsHMUmDpOBGlcru870NeKGE4E=",
+        "aarch64-linux": "sha256-I7hVCEBNjHzsQMrTUZP+74aMnQfx4je7S8nT4T4wwVw=",
+        "aarch64-darwin": "sha256-1xGrEI8rurB4u3+XkUC2CwohP66tamjCVZiJMC+3mTQ="
+      }
+    },
+    "webkit": {
+      "revision": "2358",
+      "browserVersion": "26.5",
+      "hashes": {
+        "x86_64-linux": "sha256-xOcnO8d3cZC8YiAlzLlUq2XtCDOTn6GvKe6ztucFqNE=",
+        "aarch64-linux": "sha256-Iu3OKOKrPoRy32jLUtTe6G4sGBeHfyYJSFqtBtWDUHc=",
+        "aarch64-darwin": "sha256-XJWmHoiYalN3wJNfpq8Zf2Rk/auYcup4pmTtlrI6yew="
+      }
+    },
+    "ffmpeg": {
+      "revision": "1011",
+      "hashes": {
+        "x86_64-linux": "sha256-AWTiui+ccKHxsIaQSgc5gWCJT5gYwIWzAEqSuKgVqZU=",
+        "aarch64-linux": "sha256-1mOKO2lcnlwLsC6ob//xKnKrCOp94pw8X14uBxCdj0Q=",
+        "aarch64-darwin": "sha256-ky10UQj+XPVGpaWAPvKd51C5brml0y9xQ6iKcrxAMRc="
+      }
+    }
+  }
+}
