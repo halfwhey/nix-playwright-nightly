@@ -79,3 +79,21 @@ the packages supported on their platforms.
 Validation: workflow actionlint, full `repoctl check`, and scoped
 `git diff --check` passed. A live Camoufox cache dry run reported the missing
 ARM Linux browser pin and selected a push without modifying Cachix.
+
+## 2026-09-12 — Add Camoufox on Apple Silicon
+
+Camoufox browser packaging now preserves the native signed macOS application
+bundle, exposes its executable and Applications entry, and retains the layout
+expected by the Python wrapper. Package outputs follow the platforms available
+in each browser pin, so older Linux-only pins are excluded from Darwin.
+
+The browser updater now fills missing platform assets in existing pins while
+preserving existing hashes. It generated the Apple Silicon source for
+152.0.4-beta.30. Both Camoufox updaters build on Apple Silicon, and the macOS sync
+job builds/caches the wrappers, reconciles the browser pin, and smoke-tests a
+headless launch through the bundled Python driver.
+
+Validation: all-system flake evaluation, ShellCheck, workflow actionlint,
+missing-platform pin generation, repeat-update no-op, and the ARM Linux browser
+build passed. Native Apple Silicon build and launch validation runs in GitHub
+Actions; this development machine is ARM Linux.

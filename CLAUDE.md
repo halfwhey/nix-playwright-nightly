@@ -22,7 +22,8 @@ standalone projection. Preserve unrelated changes in the surrounding worktree.
 - `.github/workflows/sync.yml` runs daily/manual upstream updates, reconciles all
   Playwright browser pins on every supported runner, then pushes generated
   commits. Camoufox browser and Python releases are updated in the main job;
-  the ARM Linux job builds/caches its wrappers and reconciles its browser pin.
+  the ARM Linux and Apple Silicon jobs build/cache its wrappers and reconcile
+  its browser pins. The macOS job smoke-tests a headless browser launch.
   Follow-up architecture jobs use the synchronized commit SHA.
   `.github/workflows/ci.yml` is the manually dispatched flake/smoke-test flow.
 - `docs/` contains project-local work records.

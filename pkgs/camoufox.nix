@@ -66,14 +66,29 @@ stdenv.mkDerivation {
   # Firefox relrhack needs newer patchelf's no-clobber behavior.
   patchelfFlags = lib.optionals stdenv.hostPlatform.isLinux [ "--no-clobber-old-sections" ];
 
+  # Keep the signed macOS application bundle byte-for-byte intact.
+  dontFixup = stdenv.hostPlatform.isDarwin;
+
   installPhase = ''
     runHook preInstall
 
     installDir="$out/lib/camoufox-${version}"
     mkdir -p "$installDir" "$out/bin"
     cp -R . "$installDir/"
-    chmod +x "$installDir/camoufox" "$installDir/camoufox-bin" "$installDir/v4l2test"
-    ln -s "$installDir/${binaryName}" "$out/bin/${binaryName}"
+    ${
+      if stdenv.hostPlatform.isDarwin then
+        ''
+          test -x "$installDir/Camoufox.app/Contents/MacOS/camoufox"
+          mkdir -p "$out/Applications"
+          ln -s "$installDir/Camoufox.app" "$out/Applications/Camoufox.app"
+          ln -s "$installDir/Camoufox.app/Contents/MacOS/camoufox" "$out/bin/${binaryName}"
+        ''
+      else
+        ''
+          chmod +x "$installDir/camoufox" "$installDir/camoufox-bin" "$installDir/v4l2test"
+          ln -s "$installDir/${binaryName}" "$out/bin/${binaryName}"
+        ''
+    }
 
     runHook postInstall
   '';

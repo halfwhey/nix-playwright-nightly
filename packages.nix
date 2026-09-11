@@ -144,10 +144,17 @@ let
     let
       toolManifest = pins."camoufox-browsers";
       pinFor = v: readJSON (./pins/camoufox-browsers + "/${v}.json");
-      versionedPkgs = map (v: {
-        name = "camoufox-browsers-${toAttr v}";
-        value = mkCamoufoxBrowsers (pinFor v);
-      }) toolManifest.versions;
+      versionedPkgs =
+        map
+          (v: {
+            name = "camoufox-browsers-${toAttr v}";
+            value = mkCamoufoxBrowsers (pinFor v);
+          })
+          (
+            builtins.filter (
+              v: builtins.hasAttr pkgs.stdenv.hostPlatform.system (pinFor v).sources
+            ) toolManifest.versions
+          );
       latestPin = pinFor toolManifest.latest;
     in
     builtins.listToAttrs versionedPkgs
@@ -189,7 +196,9 @@ let
     if
       (builtins.hasAttr "camoufox" pins)
       && (builtins.hasAttr "camoufox-browsers" pins)
-      && pkgs.stdenv.hostPlatform.system == "aarch64-linux"
+      &&
+        builtins.hasAttr pkgs.stdenv.hostPlatform.system
+          (readJSON (./pins/camoufox-browsers + "/${pins."camoufox-browsers".latest}.json")).sources
     then
       {
         inherit (buildCamoufox) camoufox;

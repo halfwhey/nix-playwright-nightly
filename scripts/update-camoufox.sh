@@ -85,11 +85,11 @@ attr_version="${package_version//./_}"
   git add "pins/${TOOL}/${package_version}.json" "pins/pin.json"
 )
 current_system=$(nix eval --raw --impure --expr builtins.currentSystem)
-if [ "$current_system" = "aarch64-linux" ]; then
+if [[ $current_system == "aarch64-linux" || $current_system == "aarch64-darwin" ]]; then
   log "building .#camoufox-${attr_version}"
   (cd "$FLAKE_ROOT" && nix build --no-link ".#camoufox-${attr_version}")
 else
-  log "skipping local build on unsupported system ${current_system}; aarch64-linux cache job will build it"
+  log "skipping local build on unsupported system ${current_system}; supported cache jobs will build it"
 fi
 log "commit"
 (

@@ -15,11 +15,12 @@ export TOOL FLAKE_ROOT
 
 require_cmd curl jq nix git
 
-SUPPORTED_CAMOUFOX_SYSTEMS=(aarch64-linux)
+SUPPORTED_CAMOUFOX_SYSTEMS=(aarch64-linux aarch64-darwin)
 
 asset_suffix_for_system() {
   case "$1" in
   aarch64-linux) printf 'lin.arm64' ;;
+  aarch64-darwin) printf 'mac.arm64' ;;
   *) die "unsupported Camoufox system '$1'" ;;
   esac
 }
@@ -48,9 +49,20 @@ log "target package version: $package_version"
 is_latest=0
 [ "$package_version" = "$upstream_latest" ] && is_latest=1
 
+sources_obj='{}'
 if has_pin_for "$package_version"; then
-  log "already have pin for $package_version; nothing to do"
-  exit 0
+  sources_obj=$(jq -e '.sources' "${PIN_DIR}/${package_version}.json")
+  complete=1
+  for sys in "${SUPPORTED_CAMOUFOX_SYSTEMS[@]}"; do
+    if ! printf '%s' "$sources_obj" | jq -e --arg sys "$sys" 'has($sys)' >/dev/null; then
+      complete=0
+    fi
+  done
+  if [ "$complete" -eq 1 ]; then
+    log "already have pin for $package_version on all supported systems; nothing to do"
+    exit 0
+  fi
+  log "adding missing systems to existing pin for $package_version"
 fi
 
 release_json="$latest_json"
@@ -63,8 +75,10 @@ if [ -z "$tag" ]; then
   die "could not resolve release tag for Camoufox $package_version"
 fi
 
-sources_obj='{}'
 for sys in "${SUPPORTED_CAMOUFOX_SYSTEMS[@]}"; do
+  if printf '%s' "$sources_obj" | jq -e --arg sys "$sys" 'has($sys)' >/dev/null; then
+    continue
+  fi
   suffix=$(asset_suffix_for_system "$sys")
   asset_name="camoufox-${package_version}-${suffix}.zip"
   url=$(printf '%s' "$release_json" |
@@ -96,11 +110,11 @@ attr_version="${package_version//./_}"
   git add "pins/${TOOL}/${package_version}.json" "pins/pin.json"
 )
 current_system=$(nix eval --raw --impure --expr builtins.currentSystem)
-if [ "$current_system" = "aarch64-linux" ]; then
+if [[ $current_system == "aarch64-linux" || $current_system == "aarch64-darwin" ]]; then
   log "building .#camoufox-browsers-${attr_version}"
   (cd "$FLAKE_ROOT" && nix build --no-link ".#camoufox-browsers-${attr_version}")
 else
-  log "skipping local build on unsupported system ${current_system}; aarch64-linux cache job will build it"
+  log "skipping local build on unsupported system ${current_system}; supported cache jobs will build it"
 fi
 log "commit"
 (

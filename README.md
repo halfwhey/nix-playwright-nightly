@@ -15,7 +15,7 @@ It also packages PyPI `camoufox` bundled with the current Camoufox browser, inde
 
 Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
 
-Camoufox is currently available on `aarch64-linux`.
+Camoufox is available on `aarch64-linux` and Apple Silicon (`aarch64-darwin`).
 
 ## Why
 
@@ -119,6 +119,8 @@ playwright.packages.${system}.playwright-python-1_58_0-browsers   # pinned
 ```
 
 ### Camoufox
+
+The examples below use ARM Linux; use `aarch64-darwin` for Apple Silicon.
 
 ```nix
 playwright.packages.aarch64-linux.camoufox                         # latest Python wrapper plus latest browser
@@ -271,9 +273,11 @@ browser closures with their per-system Cachix pins. The x86_64-linux cache
 reconciliation runs before any generated pin commits are pushed to `main`; the
 Arm Linux and Darwin jobs check out that synchronized revision and perform the
 same reconciliation. Sync also updates the Camoufox browser and Python wrapper
-independently. The ARM Linux job builds and caches `camoufox` and
-`camoufox-playwright-cli`, and reconciles the `camoufox-browsers-aarch64-linux`
-Cachix pin on every run. Camoufox is only exposed on `aarch64-linux`.
+independently. The ARM Linux and Apple Silicon jobs build and cache `camoufox` and
+`camoufox-playwright-cli`, and reconciles the per-system Camoufox browser
+Cachix pin on every run. The macOS job also verifies a headless browser launch.
+Older versioned browser outputs are exposed only where their pins include a
+matching platform asset.
 See `.github/workflows/sync.yml`.
 
 ## Acknowledgement

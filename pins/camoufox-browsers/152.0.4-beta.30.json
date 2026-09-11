@@ -6,6 +6,11 @@
       "suffix": "lin.arm64",
       "url": "https://github.com/daijro/camoufox/releases/download/v152.0.4-beta.30/camoufox-152.0.4-beta.30-lin.arm64.zip",
       "hash": "sha256-Gc/sa6PeDGfZQaC1qwrdZZmegVfQoa4cAIW/BGPwyIg="
+    },
+    "aarch64-darwin": {
+      "suffix": "mac.arm64",
+      "url": "https://github.com/daijro/camoufox/releases/download/v152.0.4-beta.30/camoufox-152.0.4-beta.30-mac.arm64.zip",
+      "hash": "sha256-a2gFKZDNfgDrQJ5/HKsXTsCKpjRf3dJ6e903FzlqaMw="
     }
   }
 }
