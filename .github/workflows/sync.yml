@@ -32,6 +32,8 @@ jobs:
       - name: Record starting revision
         id: starting-revision
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Test npm release resolution
+        run: bash scripts/tests/npm-resolution.sh
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |

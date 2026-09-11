@@ -1,3 +1,10 @@
 Pin data for each tool lives here. Every file is machine-managed by `./scripts/update-cli.sh`, `./scripts/update-dotnet.sh`, `./scripts/update-mcp.sh`, `./scripts/update-node.sh`, `./scripts/update-python.sh`, and `./scripts/update-camoufox.sh`. Do not hand-edit; any manual change will be lost on the next sync run.
 
 Layout: `pins/pin.json` is the single manifest, with shape `{ "cli": { "latest": "<v>", "versions": [...] }, "dotnet": {...}, "mcp": {...}, "node": {...}, "python": {...}, "camoufox": {...} }`. Per-version pin data lives in `pins/<tool>/<version>.json`. The manifest is authoritative for what versions exist and which one is latest; `packages.nix` reads it to enumerate every versioned output.
+
+CLI and MCP source commits come from npm `gitHead` when available, otherwise
+from the peeled release tag, checked against the published package metadata.
+Browser metadata for CLI, MCP, Node.js, and Python comes from the exact
+`playwright-core` npm tarball, including untagged alphas. New pins omit the
+informational `playwrightSha` (and Node.js `packageSha`) fields because npm no
+longer consistently provides them; existing pins remain compatible.

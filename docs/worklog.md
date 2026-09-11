@@ -39,3 +39,30 @@ Remaining concerns: the public Cachix pins remain stale until a maintainer runs
 the sync workflow (or an equivalent authorized push). No Cachix mutation or
 workflow dispatch was performed. The unrelated root `uv.lock` mismatch still
 prevents the full repository check from completing.
+
+## 2026-09-11 — Resolve npm releases without gitHead
+
+The scheduled sync run 34577476503 failed on CLI 0.1.19 because npm omitted
+`gitHead`. MCP 0.0.80 and their Playwright 1.63.0-alpha-2026-08-31 dependency
+also lack that field. CLI/MCP now resolve missing source SHAs from release tags
+(including annotated tags) and verify source package names, versions, and
+runtime dependencies against npm. CLI, MCP, Node.js, and Python now read browser
+metadata from the exact published playwright-core tarball, validating its
+identity and browser manifest. No alpha tag or informational source SHA is
+required for browser resolution.
+
+Added offline regression tests to both workflows and documented the compatible
+pin metadata change. Generated pins were not changed.
+
+Validation:
+
+- Passed live resolution of CLI 0.1.19 and MCP 0.0.80 and extraction of the
+  1.63.0-alpha-2026-08-31 browser manifest.
+- Passed offline regression tests for gitHead, missing gitHead, lightweight and
+  annotated tags, missing/invalid SHAs, source mismatches, and invalid manifests.
+- Passed ShellCheck, workflow actionlint, project flake check, repository lint,
+  the full `nix run .#repoctl -- check`, and `git diff --check`.
+
+Publication, full sync builds, Cachix mutations, and workflow dispatch were not
+performed. The remote workflow needs the source changes published before it can
+use this fix.

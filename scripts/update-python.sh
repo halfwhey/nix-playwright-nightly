@@ -4,7 +4,7 @@
 # Add PyPI playwright==<version> (default: latest on PyPI) to pins/python/.
 # PyPI's playwright lives in microsoft/playwright-python and hardcodes a
 # driver_version in setup.py; we use that to resolve the matching
-# microsoft/playwright SHA and then its browsers.json.
+# playwright-core package and its embedded browsers.json.
 
 set -euo pipefail
 
@@ -52,18 +52,8 @@ if [ -z "$driver_version" ]; then
 fi
 log "playwright-core (driver) version: $driver_version"
 
-log "resolving playwright@${driver_version} -> gitHead SHA via npm"
-# npm's `playwright` package has the same SHA we need, regardless of whether
-# the driver is stable, alpha, beta, or next.
-playwright_sha=$(curl -fsSL "https://registry.npmjs.org/playwright/${driver_version}" |
-  jq -r '.gitHead // empty')
-if [ -z "$playwright_sha" ]; then
-  die "could not resolve gitHead for playwright@${driver_version}"
-fi
-log "playwright-core SHA: $playwright_sha"
-
-log "fetching browsers.json at ${playwright_sha}"
-browsers_json=$(fetch_browsers_json "$playwright_sha")
+log "fetching browsers.json from playwright-core@${driver_version}"
+browsers_json=$(fetch_npm_browsers_json "$driver_version")
 
 pkg_hashes=$(emit_python_pkg_hashes "$package_version")
 browsers_obj=$(parse_browsers_json "$browsers_json" | emit_browsers_obj)
@@ -71,10 +61,9 @@ browsers_obj=$(parse_browsers_json "$browsers_json" | emit_browsers_obj)
 jq -n \
   --arg package "$package_version" \
   --arg playwrightVersion "$driver_version" \
-  --arg playwrightSha "$playwright_sha" \
   --argjson pkg_hashes "$pkg_hashes" \
   --argjson browsers "$browsers_obj" \
-  '{ package: $package, playwrightVersion: $playwrightVersion, playwrightSha: $playwrightSha }
+  '{ package: $package, playwrightVersion: $playwrightVersion }
    + $pkg_hashes
    + { browsers: $browsers }' |
   write_pin_file "$package_version"

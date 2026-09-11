@@ -52,11 +52,53 @@ if [ -z "${UPDATE_SCRIPT_NIX_SHELL_READY:-}" ]; then
     -c "$0" "$@"
 fi
 
-# Fetch browsers.json for a given microsoft/playwright commit SHA.
-# Outputs raw JSON on stdout.
-fetch_browsers_json() {
-  local sha="$1"
-  curl -fsSL "https://raw.githubusercontent.com/microsoft/playwright/${sha}/packages/playwright-core/browsers.json"
+# Resolve source builds to an immutable commit. npm no longer always publishes
+# gitHead; release tags are a fallback, while older untagged alphas keep working.
+resolve_npm_source_sha() {
+  local meta="$1" repo="$2" version sha refs source_meta
+  version=$(printf '%s' "$meta" | jq -er '.version | strings | select(length > 0)')
+  sha=$(printf '%s' "$meta" | jq -r '.gitHead // empty')
+  if [ -z "$sha" ]; then
+    log "gitHead missing; resolving ${repo} tag v${version}"
+    refs=$(git ls-remote --tags "https://github.com/microsoft/${repo}.git" \
+      "refs/tags/v${version}" "refs/tags/v${version}^{}") ||
+      die "could not query ${repo} tag v${version}"
+    # Prefer the peeled commit for annotated tags.
+    sha=$(printf '%s\n' "$refs" | awk '
+      $2 ~ /\^\{\}$/ { peeled = $1 }
+      $2 !~ /\^\{\}$/ { direct = $1 }
+      END { print (peeled != "" ? peeled : direct) }
+    ')
+  fi
+  [[ $sha =~ ^[0-9a-f]{40}$ ]] ||
+    die "could not resolve an immutable source commit for ${repo}@${version}"
+  source_meta=$(curl -fsSL "https://raw.githubusercontent.com/microsoft/${repo}/${sha}/package.json") ||
+    die "could not fetch source metadata for ${repo}@${sha}"
+  printf '%s' "$source_meta" | jq -e --argjson published "$meta" '
+    .name == $published.name and .version == $published.version
+    and .dependencies == $published.dependencies
+  ' >/dev/null || die "source metadata does not match published ${repo}@${version}"
+  printf '%s' "$sha"
+}
+
+# Read the browser manifest shipped in the exact core release. This also works
+# for alphas with neither gitHead nor a Git tag. Nix unpacks into the store;
+# no archive paths are extracted into the working tree.
+fetch_npm_browsers_json() {
+  local version="$1" meta url archive_path
+  meta=$(curl -fsSL "https://registry.npmjs.org/playwright-core/${version}")
+  url=$(printf '%s' "$meta" | jq -er '.dist.tarball | strings | select(startswith("https://"))')
+  archive_path=$(nix store prefetch-file --json --unpack "$url" | jq -er '.storePath')
+  jq -e --arg version "$version" '
+    .name == "playwright-core" and .version == $version
+  ' "$archive_path/package.json" >/dev/null ||
+    die "core tarball does not match playwright-core@${version}"
+  jq -e '
+    .browsers | type == "array" and length > 0
+    and all(.[]; (.name | type == "string") and (.revision | type == "string"))
+  ' "$archive_path/browsers.json" >/dev/null ||
+    die "invalid browsers.json in playwright-core@${version}"
+  cat "$archive_path/browsers.json"
 }
 
 # Filter browsers.json down to the browsers we support. Echoes tab-separated
@@ -208,10 +250,7 @@ prefetch_npm_deps_hash() {
 
 # Emit a JSON fragment `{ srcHash, npmDepsHash }` for an npm-based tool.
 # Owner is always microsoft; `repo` is the github repo name; `rev` is a
-# git commit SHA (we use the npm metadata's `gitHead`, not a version tag,
-# because pre-release / alpha versions of @playwright/cli and
-# @playwright/mcp are published to npm without ever being tagged in the
-# upstream repo).
+# git commit SHA resolved from npm metadata or a release tag.
 emit_npm_pkg_hashes() {
   local repo="$1" rev="$2"
   log "prefetching ${repo}@${rev} src hash"
