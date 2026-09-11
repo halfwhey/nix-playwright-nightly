@@ -25,6 +25,7 @@ let
   pythonDeps = with python3Packages; [
     browserforge
     click
+    geoip2
     inquirer
     language-tags
     lxml
