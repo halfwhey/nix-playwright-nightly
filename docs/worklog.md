@@ -66,3 +66,16 @@ Validation:
 Publication, full sync builds, Cachix mutations, and workflow dispatch were not
 performed. The remote workflow needs the source changes published before it can
 use this fix.
+
+## 2026-09-12 — Include Camoufox in daily sync
+
+Sync now updates Camoufox browser and Python wrapper pins before recording the
+synchronized revision. The ARM Linux job builds and caches both `camoufox` and
+`camoufox-playwright-cli`, then reconciles the Camoufox browser pin alongside
+Playwright. Explicit Bash pipeline failure handling prevents a failed build
+from being hidden by a successful cache command. Other runners retain only
+the packages supported on their platforms.
+
+Validation: workflow actionlint, full `repoctl check`, and scoped
+`git diff --check` passed. A live Camoufox cache dry run reported the missing
+ARM Linux browser pin and selected a push without modifying Cachix.

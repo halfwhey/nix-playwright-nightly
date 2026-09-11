@@ -226,7 +226,7 @@ nix build \
   github:halfwhey/nix-playwright-nightly#playwright-cli
 ```
 
-Current cache coverage (excluding camoufox):
+Playwright browser cache coverage:
 
 - `x86_64-linux` via `ubuntu-latest`
 - `aarch64-linux` via `ubuntu-24.04-arm`
@@ -270,7 +270,11 @@ CI runs the same update flow once a day, then reconciles all latest Playwright
 browser closures with their per-system Cachix pins. The x86_64-linux cache
 reconciliation runs before any generated pin commits are pushed to `main`; the
 Arm Linux and Darwin jobs check out that synchronized revision and perform the
-same reconciliation. See `.github/workflows/sync.yml`.
+same reconciliation. Sync also updates the Camoufox browser and Python wrapper
+independently. The ARM Linux job builds and caches `camoufox` and
+`camoufox-playwright-cli`, and reconciles the `camoufox-browsers-aarch64-linux`
+Cachix pin on every run. Camoufox is only exposed on `aarch64-linux`.
+See `.github/workflows/sync.yml`.
 
 ## Acknowledgement
 

@@ -69,6 +69,12 @@ jobs:
         run: ./scripts/update-python.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update Camoufox browser
+        run: ./scripts/update-camoufox-browsers.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update Camoufox Python wrapper
+        run: ./scripts/update-camoufox.sh
       - name: Detect changes
         id: detect-changes
         run: |
@@ -103,8 +109,18 @@ jobs:
           name: halfwhey
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           skipPush: true
+      # Camoufox is exposed only on aarch64-linux. Its updater generates
+      # pins on x86_64-linux and defers build validation to this runner.
+      - name: Build and cache Camoufox packages
+        shell: bash
+        run: |
+          nix build --no-link --print-out-paths .#camoufox .#camoufox-playwright-cli |
+            while IFS= read -r path; do nix path-info -r "$path"; done |
+            cachix push halfwhey
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Push and pin latest browser closures
-        run: ./scripts/push-latest-browsers.sh halfwhey 1 cli dotnet mcp node python
+        run: ./scripts/push-latest-browsers.sh halfwhey 1 cli dotnet mcp node python camoufox
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
           FORCE: ${{ inputs.force_push_latest_browsers && '1' || '0' }}

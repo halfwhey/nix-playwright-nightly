@@ -21,7 +21,9 @@ standalone projection. Preserve unrelated changes in the surrounding worktree.
   without building or changing Cachix; `FORCE=1` bypasses comparison.
 - `.github/workflows/sync.yml` runs daily/manual upstream updates, reconciles all
   Playwright browser pins on every supported runner, then pushes generated
-  commits. Follow-up architecture jobs use the synchronized commit SHA.
+  commits. Camoufox browser and Python releases are updated in the main job;
+  the ARM Linux job builds/caches its wrappers and reconciles its browser pin.
+  Follow-up architecture jobs use the synchronized commit SHA.
   `.github/workflows/ci.yml` is the manually dispatched flake/smoke-test flow.
 - `docs/` contains project-local work records.
 
