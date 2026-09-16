@@ -47,6 +47,10 @@ if [ -z "$browsers_json" ]; then
   die "could not extract .playwright/package/browsers.json from Microsoft.Playwright ${package_version}"
 fi
 
+# Inspect the registry shipped in the same driver as the browser manifest.
+unzip -q "$tmpdir/package.nupkg" '.playwright/package/*' -d "$tmpdir/driver"
+browsers_json=$(read_browsers_json "$tmpdir/driver/.playwright/package")
+
 log "prefetching unpacked .nupkg hash"
 package_hash=$(prefetch_fetchzip_hash "$package_url" "false")
 

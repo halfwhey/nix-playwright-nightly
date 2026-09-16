@@ -98,11 +98,37 @@ fetch_npm_browsers_json() {
     and all(.[]; (.name | type == "string") and (.revision | type == "string"))
   ' "$archive_path/browsers.json" >/dev/null ||
     die "invalid browsers.json in playwright-core@${version}"
-  cat "$archive_path/browsers.json"
+  read_browsers_json "$archive_path"
+}
+
+# Read the executable layout from the published driver, since the ARM CFT
+# migration did not coincide with a browser revision bump. Old pins omit this
+# flag and retain their original URLs and store paths.
+read_browsers_json() {
+  local package_dir="$1" registry arm64_cft
+  if [ -f "$package_dir/lib/coreBundle.js" ]; then
+    registry="$package_dir/lib/coreBundle.js"
+  else
+    registry="$package_dir/lib/server/registry/index.js"
+  fi
+  [ -f "$registry" ] || die "missing browser registry in $package_dir"
+  if grep -Eq "['\"]linux-arm64['\"]: *\\[['\"]chrome-linux-arm64['\"]" "$registry"; then
+    arm64_cft=true
+  elif grep -Eq "['\"]linux-arm64['\"]: *\\[['\"]chrome-linux['\"]" "$registry"; then
+    arm64_cft=false
+  else
+    die "unrecognized ARM Linux Chromium layout in $registry"
+  fi
+  jq --argjson cft "$arm64_cft" '
+    if $cft then
+      .browsers |= map(if .name == "chromium" or .name == "chromium-headless-shell"
+                      then . + {arm64Cft: true} else . end)
+    else . end
+  ' "$package_dir/browsers.json"
 }
 
 # Filter browsers.json down to the browsers we support. Echoes tab-separated
-# rows: name<TAB>revision<TAB>browserVersion (browserVersion may be empty).
+# rows: name<TAB>revision<TAB>arm64Cft<TAB>browserVersion (browserVersion may be empty).
 # Only emits browsers with installByDefault == true and that we have a fetcher
 # for (chromium, chromium-headless-shell, firefox, webkit, ffmpeg).
 parse_browsers_json() {
@@ -111,7 +137,7 @@ parse_browsers_json() {
     .browsers[]
     | select(.installByDefault == true)
     | select(.name | IN("chromium","chromium-headless-shell","firefox","webkit","ffmpeg"))
-    | [.name, .revision, (.browserVersion // "")]
+    | [.name, .revision, (.arm64Cft // false), (.browserVersion // "")]
     | @tsv
   '
 }
@@ -124,19 +150,31 @@ parse_browsers_json() {
 # `webkit-mac-15-arm64.zip` artifact for the currently pinned revisions, so we
 # intentionally mirror that download path here.
 browser_url() {
-  local name="$1" revision="$2" browserVersion="$3" system="$4"
+  local name="$1" revision="$2" browserVersion="$3" system="$4" arm64_cft="${5:-false}"
   case "$name" in
   chromium)
     case "$system" in
     x86_64-linux) printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-linux64.zip' "$browserVersion" ;;
-    aarch64-linux) printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-linux-arm64.zip' "$revision" ;;
+    aarch64-linux)
+      if [ "$arm64_cft" = true ]; then
+        printf 'https://cdn.playwright.dev/builds/cft/%s/linux-arm64/chrome-linux-arm64.zip' "$browserVersion"
+      else
+        printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-linux-arm64.zip' "$revision"
+      fi
+      ;;
     aarch64-darwin) printf 'https://cdn.playwright.dev/builds/cft/%s/mac-arm64/chrome-mac-arm64.zip' "$browserVersion" ;;
     esac
     ;;
   chromium-headless-shell)
     case "$system" in
     x86_64-linux) printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-headless-shell-linux64.zip' "$browserVersion" ;;
-    aarch64-linux) printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-headless-shell-linux-arm64.zip' "$revision" ;;
+    aarch64-linux)
+      if [ "$arm64_cft" = true ]; then
+        printf 'https://cdn.playwright.dev/builds/cft/%s/linux-arm64/chrome-headless-shell-linux-arm64.zip' "$browserVersion"
+      else
+        printf 'https://cdn.playwright.dev/builds/chromium/%s/chromium-headless-shell-linux-arm64.zip' "$revision"
+      fi
+      ;;
     aarch64-darwin) printf 'https://cdn.playwright.dev/builds/cft/%s/mac-arm64/chrome-headless-shell-mac-arm64.zip' "$browserVersion" ;;
     esac
     ;;
@@ -190,7 +228,7 @@ prefetch_fetchzip_hash() {
   case "$strip" in
   true)
     local b32
-    b32=$(nix-prefetch-url --unpack "$url" 2>/dev/null) ||
+    b32=$(nix-prefetch-url --unpack "$url") ||
       die "prefetch failed for $url"
     nix hash convert --to sri --hash-algo sha256 "$b32"
     ;;
@@ -311,7 +349,7 @@ emit_python_pkg_hashes() {
 # Writes progress logs to stderr.
 emit_browsers_obj() {
   local acc='{}'
-  while IFS=$'\t' read -r name revision browserVersion; do
+  while IFS=$'\t' read -r name revision arm64_cft browserVersion; do
     [ -z "$name" ] && continue
     log "prefetching ${name} ${revision}"
     local hashes_obj='{}'
@@ -319,7 +357,7 @@ emit_browsers_obj() {
       local strip="true"
       strip_root_false "$name" "$sys" && strip="false"
       local url
-      url=$(browser_url "$name" "$revision" "$browserVersion" "$sys")
+      url=$(browser_url "$name" "$revision" "$browserVersion" "$sys" "$arm64_cft")
       local hash
       hash=$(prefetch_fetchzip_hash "$url" "$strip")
       hashes_obj=$(printf '%s' "$hashes_obj" | jq --arg k "$sys" --arg v "$hash" '. + { ($k): $v }')
@@ -331,6 +369,9 @@ emit_browsers_obj() {
     else
       entry=$(jq -n --arg r "$revision" --argjson h "$hashes_obj" \
         '{ revision: $r, hashes: $h }')
+    fi
+    if [ "$arm64_cft" = true ]; then
+      entry=$(printf '%s' "$entry" | jq '. + {arm64Cft: true}')
     fi
     acc=$(printf '%s' "$acc" | jq --arg name "$name" --argjson entry "$entry" '. + { ($name): $entry }')
   done

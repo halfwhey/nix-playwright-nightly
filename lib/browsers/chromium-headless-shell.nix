@@ -27,6 +27,7 @@
 }:
 {
   browserVersion,
+  arm64Cft ? false,
   revision,
   hashes,
   ...
@@ -39,7 +40,11 @@ let
     url =
       {
         x86_64-linux = "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux64/chrome-headless-shell-linux64.zip";
-        aarch64-linux = "https://cdn.playwright.dev/builds/chromium/${revision}/chromium-headless-shell-linux-arm64.zip";
+        aarch64-linux =
+          if arm64Cft then
+            "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux-arm64/chrome-headless-shell-linux-arm64.zip"
+          else
+            "https://cdn.playwright.dev/builds/chromium/${revision}/chromium-headless-shell-linux-arm64.zip";
         aarch64-darwin = "https://cdn.playwright.dev/builds/cft/${browserVersion}/mac-arm64/chrome-headless-shell-mac-arm64.zip";
       }
       .${system} or throwSystem;
@@ -75,7 +80,8 @@ stdenv.mkDerivation {
 
   # Layout notes (playwright-core/src/server/registry/index.ts):
   #   linux-x64:   chrome-headless-shell-linux64/chrome-headless-shell
-  #   linux-arm64: chrome-linux/headless_shell
+  #   linux-arm64: chrome-linux/headless_shell (legacy), or
+  #                chrome-headless-shell-linux-arm64/chrome-headless-shell (CFT)
   #   mac-arm64:   chrome-headless-shell-mac-arm64/chrome-headless-shell
   # Both zips already contain the expected top-level directory (stripRoot=false),
   # so a straight copy is all that's needed.

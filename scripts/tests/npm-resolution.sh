@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Offline regression tests for npm releases published without gitHead.
+# Offline regression tests for npm source resolution and browser layouts.
 set -euo pipefail
 export TOOL=test
 FLAKE_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -54,6 +54,8 @@ mock_source_meta=$(printf '%s' "$meta" | jq '.dependencies.playwright = "1.62.0"
 expect_failure resolve_npm_source_sha "$with_head" playwright-cli
 
 # An alpha needs neither gitHead nor a tag to supply its browser manifest.
+mkdir -p "$test_tmp/lib/server/registry"
+printf '"linux-arm64": ["chrome-linux", "chrome"]' >"$test_tmp/lib/server/registry/index.js"
 version=1.63.0-alpha-2026-08-31
 jq -n --arg version "$version" '{name: "playwright-core", version: $version}' >"$test_tmp/package.json"
 printf '{"browsers":[{"name":"chromium","revision":"1243"}]}' >"$test_tmp/browsers.json"
@@ -63,4 +65,37 @@ printf '{"browsers":[]}' >"$test_tmp/browsers.json"
 expect_failure fetch_npm_browsers_json "$version"
 printf 'invalid json' >"$test_tmp/browsers.json"
 expect_failure fetch_npm_browsers_json "$version"
+# Both registry formats, including releases sharing a browser revision.
+manifest='{"browsers":[
+  {"name":"chromium","revision":"1244","browserVersion":"154.0.8037.0","installByDefault":true},
+  {"name":"chromium-headless-shell","revision":"1244","browserVersion":"154.0.8037.0","installByDefault":true},
+  {"name":"ffmpeg","revision":"1011","installByDefault":true}]}'
+printf '%s' "$manifest" >"$test_tmp/browsers.json"
+legacy=$(read_browsers_json "$test_tmp")
+[ "$(printf '%s' "$legacy" | jq '.browsers[0] | has("arm64Cft")')" = false ]
+printf '"linux-arm64": ["chrome-linux-arm64", "chrome"]' >"$test_tmp/lib/coreBundle.js"
+cft=$(fetch_npm_browsers_json "$version")
+[ "$(printf '%s' "$cft" | jq '[.browsers[].arm64Cft]')" = "$(printf '[true,true,null]' | jq .)" ]
+# Use the real pin emitter with a cheap archive boundary to check URLs and
+# layout flags survive generation, including the version-less ffmpeg row.
+prefetch_fetchzip_hash() { printf '%s' "$1"; }
+old_pin=$(parse_browsers_json "$legacy" | emit_browsers_obj)
+new_pin=$(parse_browsers_json "$cft" | emit_browsers_obj)
+for browser in chromium chromium-headless-shell; do
+  [ "$(printf '%s' "$old_pin" | jq -r --arg b "$browser" '.[$b].hashes["aarch64-linux"]')" = \
+    "https://cdn.playwright.dev/builds/chromium/1244/$browser-linux-arm64.zip" ]
+  [ "$(printf '%s' "$old_pin" | jq --arg b "$browser" '.[$b] | has("arm64Cft")')" = false ]
+  [ "$(printf '%s' "$new_pin" | jq --arg b "$browser" '.[$b].arm64Cft')" = true ]
+done
+[ "$(printf '%s' "$new_pin" | jq -r '.chromium.hashes["aarch64-linux"]')" = \
+  'https://cdn.playwright.dev/builds/cft/154.0.8037.0/linux-arm64/chrome-linux-arm64.zip' ]
+[ "$(printf '%s' "$new_pin" | jq -r '."chromium-headless-shell".hashes["aarch64-linux"]')" = \
+  'https://cdn.playwright.dev/builds/cft/154.0.8037.0/linux-arm64/chrome-headless-shell-linux-arm64.zip' ]
+[ "$(printf '%s' "$new_pin" | jq '.ffmpeg')" = "$(printf '%s' "$old_pin" | jq '.ffmpeg')" ]
+[ "$(printf '%s' "$new_pin" | jq '.chromium.hashes | del(."aarch64-linux")')" = \
+  "$(printf '%s' "$old_pin" | jq '.chromium.hashes | del(."aarch64-linux")')" ]
+printf 'unknown layout' >"$test_tmp/lib/coreBundle.js"
+expect_failure read_browsers_json "$test_tmp"
+rm "$test_tmp/lib/coreBundle.js" "$test_tmp/lib/server/registry/index.js"
+expect_failure read_browsers_json "$test_tmp"
 printf 'npm resolution regression tests passed\n'

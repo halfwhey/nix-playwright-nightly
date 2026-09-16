@@ -97,3 +97,30 @@ Validation: all-system flake evaluation, ShellCheck, workflow actionlint,
 missing-platform pin generation, repeat-update no-op, and the ARM Linux browser
 build passed. Native Apple Silicon build and launch validation runs in GitHub
 Actions; this development machine is ARM Linux.
+
+## 2026-09-16 — Follow the ARM Linux Chromium CFT migration
+
+Scheduled sync runs 34948514123 and 35074824982 failed updating CLI 0.1.20:
+the revision-based ARM Chromium 1244 URL returns HTTP 404. Upstream switched
+ARM Linux to Chrome for Testing, including different executable directories,
+in microsoft/playwright commit fab1c044c86e38bc6f44a7a2c712687c371dcb0f.
+
+The updater now reads the layout from the exact published driver registry and
+records `arm64Cft: true` on Chromium/headless-shell pins. The .NET updater
+inspects its embedded driver too. Nix fetchers select the corresponding URLs
+and Chromium install directory; absent flags preserve existing pins and store
+paths. Revision thresholds cannot reliably identify this change because the
+upstream migration itself retained revision 1243. Prefetch errors now retain
+Nix's diagnostics instead of discarding stderr.
+
+Validation: offline resolution/layout/pin-emission regression tests, Bash
+syntax, ShellCheck, actionlint, project flake check, repository lint, and full
+`repoctl check` passed. Live published drivers 1.62.0 and
+1.64.0-alpha-2026-09-14 select legacy and CFT layouts respectively. All 15
+browser URLs for the failing release return HTTP 200 across supported systems.
+Both CFT ARM Linux derivations built successfully with generated temporary
+hashes; Chromium and headless-shell launched through the exact published
+1.64.0-alpha-2026-09-14 driver and rendered a test page.
+
+No generated repository pins, publication, Cachix changes, or workflow
+dispatch were performed.

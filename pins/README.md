@@ -8,3 +8,9 @@ Browser metadata for CLI, MCP, Node.js, and Python comes from the exact
 `playwright-core` npm tarball, including untagged alphas. New pins omit the
 informational `playwrightSha` (and Node.js `packageSha`) fields because npm no
 longer consistently provides them; existing pins remain compatible.
+
+Chromium and headless-shell pins can contain `arm64Cft: true`. The updater
+reads this layout from the published driver registry (also from the bundled
+.NET driver), selecting Chrome for Testing ARM Linux URLs and executable
+paths. Absent flags preserve legacy Playwright builds. Browser revision alone
+cannot select the layout: upstream switched without bumping that revision.
