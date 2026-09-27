@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
+#   - Supports aarch64-linux and aarch64-darwin.
 {
   stdenv,
   fetchzip,
@@ -19,7 +19,6 @@ let
   throwSystem = throw "playwright-browsers/ffmpeg: unsupported system ${system}";
   archSuffix =
     {
-      x86_64-linux = "linux";
       aarch64-linux = "linux-arm64";
       aarch64-darwin = "mac-arm64";
     }

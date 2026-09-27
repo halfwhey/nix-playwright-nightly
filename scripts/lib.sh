@@ -15,7 +15,7 @@ shopt -s inherit_errexit
 
 PIN_DIR="${FLAKE_ROOT}/pins/${TOOL}"
 MANIFEST_FILE="${FLAKE_ROOT}/pins/pin.json"
-SUPPORTED_SYSTEMS=(x86_64-linux aarch64-linux aarch64-darwin)
+SUPPORTED_SYSTEMS=(aarch64-linux aarch64-darwin)
 
 log() { printf '[%s] %s\n' "${TOOL}" "$*" >&2; }
 die() {
@@ -144,8 +144,7 @@ parse_browsers_json() {
 
 # Compute the CDN URL for a given browser + revision + browserVersion on a
 # given system. Mirrors the DOWNLOAD_PATHS table in playwright-core's
-# registry for x86_64-linux (ubuntu24.04-x64), aarch64-linux
-# (ubuntu24.04-arm64), and aarch64-darwin. For Darwin WebKit, upstream's
+# registry for aarch64-linux (ubuntu24.04-arm64) and aarch64-darwin. For Darwin WebKit, upstream's
 # registry maps the supported mac26-arm64 host platform to the
 # `webkit-mac-15-arm64.zip` artifact for the currently pinned revisions, so we
 # intentionally mirror that download path here.
@@ -154,7 +153,6 @@ browser_url() {
   case "$name" in
   chromium)
     case "$system" in
-    x86_64-linux) printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-linux64.zip' "$browserVersion" ;;
     aarch64-linux)
       if [ "$arm64_cft" = true ]; then
         printf 'https://cdn.playwright.dev/builds/cft/%s/linux-arm64/chrome-linux-arm64.zip' "$browserVersion"
@@ -167,7 +165,6 @@ browser_url() {
     ;;
   chromium-headless-shell)
     case "$system" in
-    x86_64-linux) printf 'https://cdn.playwright.dev/builds/cft/%s/linux64/chrome-headless-shell-linux64.zip' "$browserVersion" ;;
     aarch64-linux)
       if [ "$arm64_cft" = true ]; then
         printf 'https://cdn.playwright.dev/builds/cft/%s/linux-arm64/chrome-headless-shell-linux-arm64.zip' "$browserVersion"
@@ -180,21 +177,18 @@ browser_url() {
     ;;
   firefox)
     case "$system" in
-    x86_64-linux) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-ubuntu-22.04.zip' "$revision" ;;
     aarch64-linux) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-ubuntu-22.04-arm64.zip' "$revision" ;;
     aarch64-darwin) printf 'https://cdn.playwright.dev/builds/firefox/%s/firefox-mac-arm64.zip' "$revision" ;;
     esac
     ;;
   webkit)
     case "$system" in
-    x86_64-linux) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-ubuntu-22.04.zip' "$revision" ;;
     aarch64-linux) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-ubuntu-22.04-arm64.zip' "$revision" ;;
     aarch64-darwin) printf 'https://cdn.playwright.dev/builds/webkit/%s/webkit-mac-15-arm64.zip' "$revision" ;;
     esac
     ;;
   ffmpeg)
     case "$system" in
-    x86_64-linux) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-linux.zip' "$revision" ;;
     aarch64-linux) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-linux-arm64.zip' "$revision" ;;
     aarch64-darwin) printf 'https://cdn.playwright.dev/builds/ffmpeg/%s/ffmpeg-mac-arm64.zip' "$revision" ;;
     esac
@@ -319,7 +313,6 @@ emit_python_pkg_hashes() {
   for sys in "${SUPPORTED_SYSTEMS[@]}"; do
     local wheel_pattern
     case "$sys" in
-    x86_64-linux) wheel_pattern='manylinux.*x86_64[.]whl$' ;;
     aarch64-linux) wheel_pattern='manylinux.*aarch64[.]whl$' ;;
     aarch64-darwin) wheel_pattern='macosx.*arm64[.]whl$' ;;
     *) die "unsupported system $sys" ;;

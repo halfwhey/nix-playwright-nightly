@@ -7,7 +7,8 @@ standalone projection. Preserve unrelated changes in the surrounding worktree.
 ## Layout
 
 - `flake.nix` and `packages.nix` expose latest and versioned tool and browser
-  packages for x86_64-linux, aarch64-linux, and aarch64-darwin.
+  packages for aarch64-linux and aarch64-darwin (ARM only; x86_64-linux was
+  dropped).
 - `pins/pin.json` selects each tool's latest version; `pins/<tool>/` contains
   generated, version-specific package and browser metadata. Do not hand-edit
   generated pins.
@@ -21,10 +22,10 @@ standalone projection. Preserve unrelated changes in the surrounding worktree.
   without building or changing Cachix; `FORCE=1` bypasses comparison.
 - `.github/workflows/sync.yml` runs daily/manual upstream updates, reconciles all
   Playwright browser pins on every supported runner, then pushes generated
-  commits. Camoufox browser and Python releases are updated in the main job;
-  the ARM Linux and Apple Silicon jobs build/cache its wrappers and reconcile
-  its browser pins. The macOS job smoke-tests a headless browser launch.
-  Follow-up architecture jobs use the synchronized commit SHA.
+  commits. The main job runs on ARM Linux: it updates all pins (including
+  Camoufox), builds/caches the Camoufox wrappers, and reconciles aarch64-linux
+  browser pins. The Apple Silicon job does the same caching for aarch64-darwin
+  on the synchronized commit SHA and smoke-tests a headless browser launch.
   `.github/workflows/ci.yml` is the manually dispatched flake/smoke-test flow.
 - `docs/` contains project-local work records.
 

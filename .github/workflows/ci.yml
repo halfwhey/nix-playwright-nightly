@@ -1,13 +1,13 @@
 name: ci
 # Manually triggered only. Runs `nix flake check` plus a smoke test of each
-# latest alias on the x86_64-linux runner, to complement local aarch64
-# development. Push this button from the Actions tab (or `gh workflow run
-# ci.yml`) whenever you want to prove a change holds on x86_64-linux.
+# latest alias on the aarch64-linux runner. Push this button from the Actions
+# tab (or `gh workflow run ci.yml`) whenever you want to prove a change holds
+# on ARM Linux.
 on:
   workflow_dispatch:
 jobs:
   flake-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - name: Test npm release resolution

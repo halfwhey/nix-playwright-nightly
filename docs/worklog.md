@@ -124,3 +124,20 @@ hashes; Chromium and headless-shell launched through the exact published
 
 No generated repository pins, publication, Cachix changes, or workflow
 dispatch were performed.
+
+## 2026-09-27 — Drop x86_64-linux; ARM only
+
+The flake now supports only `aarch64-linux` and `aarch64-darwin`. Removed
+`x86_64-linux` from the flake system list, from `SUPPORTED_SYSTEMS` and the
+CDN/wheel URL tables in `scripts/lib.sh` (new pins no longer prefetch x86
+hashes), and from the per-browser fetchers and `playwright-python.nix` system
+maps. Existing generated pins still carry `x86_64-linux` hashes; they are
+unused and left untouched rather than hand-edited.
+
+`sync.yml`'s main job now runs on `ubuntu-24.04-arm` and absorbs the former
+`push-arm-browser-cache` job: it updates pins, builds/caches the Camoufox
+wrappers, reconciles aarch64-linux browser pins, then pushes commits. The
+macOS job is unchanged. `ci.yml` smoke tests on `ubuntu-24.04-arm`.
+
+The six `*-browsers-x86_64-linux` Cachix pins are no longer reconciled and can
+be deleted by the maintainer; no Cachix changes were made here.

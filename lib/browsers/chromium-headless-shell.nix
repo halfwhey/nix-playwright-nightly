@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
+#   - Supports aarch64-linux and aarch64-darwin.
 {
   lib,
   stdenv,
@@ -39,7 +39,6 @@ let
   src = fetchzip {
     url =
       {
-        x86_64-linux = "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux64/chrome-headless-shell-linux64.zip";
         aarch64-linux =
           if arm64Cft then
             "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux-arm64/chrome-headless-shell-linux-arm64.zip"
@@ -79,7 +78,6 @@ stdenv.mkDerivation {
   ];
 
   # Layout notes (playwright-core/src/server/registry/index.ts):
-  #   linux-x64:   chrome-headless-shell-linux64/chrome-headless-shell
   #   linux-arm64: chrome-linux/headless_shell (legacy), or
   #                chrome-headless-shell-linux-arm64/chrome-headless-shell (CFT)
   #   mac-arm64:   chrome-headless-shell-mac-arm64/chrome-headless-shell

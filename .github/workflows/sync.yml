@@ -15,8 +15,10 @@ concurrency:
   group: sync
   cancel-in-progress: false
 jobs:
+  # Only ARM is supported: this job updates pins and reconciles the
+  # aarch64-linux cache; the macOS job below handles aarch64-darwin.
   sync-latest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       changed: ${{ steps.detect-changes.outputs.changed }}
       synced_sha: ${{ steps.detect-changes.outputs.sha }}
@@ -84,33 +86,6 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Push and pin latest browser closures
-        run: ./scripts/push-latest-browsers.sh halfwhey 1 cli dotnet mcp node python
-        env:
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          FORCE: ${{ inputs.force_push_latest_browsers && '1' || '0' }}
-      - name: Push commits
-        if: steps.detect-changes.outputs.changed == 'true'
-        run: git push origin HEAD:main
-  push-arm-browser-cache:
-    needs: sync-latest
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.sync-latest.outputs.synced_sha }}
-      - uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - uses: cachix/cachix-action@v15
-        with:
-          name: halfwhey
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          skipPush: true
-      # Camoufox is exposed on ARM Linux and Apple Silicon. Its updater generates
-      # pins on x86_64-linux and defers build validation to this runner.
       - name: Build and cache Camoufox packages
         shell: bash
         run: |
@@ -124,6 +99,9 @@ jobs:
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
           FORCE: ${{ inputs.force_push_latest_browsers && '1' || '0' }}
+      - name: Push commits
+        if: steps.detect-changes.outputs.changed == 'true'
+        run: git push origin HEAD:main
   push-darwin-browser-cache:
     needs: sync-latest
     runs-on: macos-26

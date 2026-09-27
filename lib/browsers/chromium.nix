@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
+#   - Supports aarch64-linux and aarch64-darwin.
 {
   stdenv,
   lib,
@@ -52,15 +52,13 @@ let
   throwSystem = throw "playwright-browsers/chromium: unsupported system ${system}";
 
   # CDN URL structure differs by platform:
-  #   x86_64-linux uses Google's chrome-for-testing (CFT) path keyed by browserVersion.
   #   aarch64-linux uses CFT when the pin records the new driver layout,
   #   otherwise Playwright's original revision-based builds.
-  #   aarch64-darwin uses CFT again, but with the macOS arm64 archive layout.
+  #   aarch64-darwin uses CFT, but with the macOS arm64 archive layout.
   src = fetchzip {
     stripRoot = !stdenv.hostPlatform.isDarwin;
     url =
       {
-        x86_64-linux = "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux64/chrome-linux64.zip";
         aarch64-linux =
           if arm64Cft then
             "https://cdn.playwright.dev/builds/cft/${browserVersion}/linux-arm64/chrome-linux-arm64.zip"
@@ -75,12 +73,11 @@ let
   # Directory name playwright expects inside the browser dir, and which binary
   # inside it is launched. playwright-core/src/server/registry/index.ts:
   #   EXECUTABLE_PATHS.chromium = {
-  #     'linux-x64': ['chrome-linux64', 'chrome'],
-  #     'linux-arm64': ['chrome-linux', 'chrome'],
+  #     'linux-arm64': ['chrome-linux', 'chrome'] (legacy),
+  #     'linux-arm64': ['chrome-linux-arm64', 'chrome'] (CFT),
   #   }
   layoutDir =
     {
-      x86_64-linux = "chrome-linux64";
       aarch64-linux = if arm64Cft then "chrome-linux-arm64" else "chrome-linux";
       aarch64-darwin = "chrome-mac-arm64";
     }

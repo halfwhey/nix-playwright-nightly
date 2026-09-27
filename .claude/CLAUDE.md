@@ -2,7 +2,7 @@
 
 A Nix flake that packages `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, .NET `Microsoft.Playwright`, and PyPI `playwright` as pure-Nix derivations, each bundled with the exact browser revisions its `playwright-core` requires. Drop it into a flake input and use it: no env vars, no extra setup, no runtime browser downloads, no `npx`/`pip install` at runtime.
 
-Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
+Supported systems: `aarch64-linux`, `aarch64-darwin`. ARM only: `x86_64-linux` was dropped on 2026-09-27. Older pin files may still carry `x86_64-linux` hashes; they are ignored.
 
 ## Usage
 
@@ -16,7 +16,7 @@ Pin `main` once and pick the version per tool via the flake attribute name:
   };
 
   outputs = { self, nixpkgs, playwright }:
-    let system = "x86_64-linux"; in {
+    let system = "aarch64-linux"; in {
       devShells.${system}.default =
         nixpkgs.legacyPackages.${system}.mkShell {
           packages = [
@@ -180,7 +180,7 @@ Each file holds the data needed to build one version of one tool. The `browsers`
 | mcp | `fetchFromGitHub microsoft/playwright-mcp` + `buildNpmPackage` | `packageSha`, `playwrightVersion`, `playwrightSha`, `srcHash`, `npmDepsHash` |
 | node | npm tarballs for `playwright` and `playwright-core` via `fetchzip` | `packageSha`, `playwrightVersion`, `playwrightSha`, `packageHash`, `coreHash` |
 | dotnet | NuGet `.nupkg` via `fetchzip` | `packageHash` |
-| python | `fetchFromGitHub microsoft/playwright-python` + bundled JS driver from `cdn.playwright.dev/builds/driver` | `playwrightVersion`, `playwrightSha`, `srcHash`, `driverHashes.{x86_64-linux,aarch64-linux,aarch64-darwin}` |
+| python | `fetchFromGitHub microsoft/playwright-python` + bundled JS driver from `cdn.playwright.dev/builds/driver` | `playwrightVersion`, `playwrightSha`, `srcHash`, `driverHashes.{aarch64-linux,aarch64-darwin}` |
 
 Shared fields:
 - `packageSha` is the npm `gitHead` commit SHA for the tool's own repo; `fetchFromGitHub` uses it as `rev` instead of a version tag because pre-release alphas are published without tags.
@@ -202,7 +202,6 @@ Example (`pins/cli/0.1.7.json`):
       "revision": "1219",
       "browserVersion": "147.0.7727.49",
       "hashes": {
-        "x86_64-linux":   "sha256-...",
         "aarch64-linux":  "sha256-...",
         "aarch64-darwin": "sha256-..."
       }
@@ -255,7 +254,7 @@ in
   // { default = /* playwright-cli latest */; }
 ```
 
-`flake.nix` itself is the thinnest possible wrapper: inputs, outputs, the `x86_64-linux` / `aarch64-linux` / `aarch64-darwin` system loop, and `packages = import ./packages.nix { inherit pkgs; };`.
+`flake.nix` itself is the thinnest possible wrapper: inputs, outputs, the `aarch64-linux` / `aarch64-darwin` system loop, and `packages = import ./packages.nix { inherit pkgs; };`.
 
 ### Package derivations
 
@@ -354,10 +353,9 @@ The update scripts are idempotent: if `pins/<tool>/<version>.json` already exist
 
 The job layout:
 
-1. **`sync-latest`** (`ubuntu-latest`) checks out `main` and runs `./scripts/update-cli.sh`, then `update-mcp.sh`, `update-node.sh`, `update-dotnet.sh`, `update-python.sh` **without arguments**. Camoufox is intentionally excluded from scheduled sync and Cachix publishing because the browser closures are too large for the current pin budget. Each Playwright update script is a no-op if the current upstream latest is already pinned; otherwise it writes a new pin file, updates the manifest, builds the tool locally, and commits. A failure stops the workflow so a human can investigate before more versions pile up.
-2. The same job then calls `scripts/push-latest-browsers.sh halfwhey 1 <changed-tools>` to push and cachix-pin the x86_64-linux browser linkFarms for every tool whose pin changed this run (or all five when `force_push_latest_browsers` is set).
-3. **`push-arm-browser-cache`** (`ubuntu-24.04-arm`) and **`push-darwin-browser-cache`** (`macos-26`) both checkout the updated SHA and re-run `push-latest-browsers.sh` so the aarch64-linux and aarch64-darwin closures land in cachix under the same pin names.
-4. Finally the first job does `git push origin HEAD:main` with the default `GITHUB_TOKEN`.
+1. **`sync-latest`** (`ubuntu-24.04-arm`) checks out `main` and runs `./scripts/update-cli.sh`, then `update-mcp.sh`, `update-node.sh`, `update-dotnet.sh`, `update-python.sh` **without arguments**. Camoufox is intentionally excluded from scheduled sync and Cachix publishing because the browser closures are too large for the current pin budget. Each Playwright update script is a no-op if the current upstream latest is already pinned; otherwise it writes a new pin file, updates the manifest, builds the tool locally, and commits. A failure stops the workflow so a human can investigate before more versions pile up.
+2. The same job then calls `scripts/push-latest-browsers.sh` to reconcile and cachix-pin the aarch64-linux browser linkFarms (all tools on every run; `force_push_latest_browsers` bypasses the comparison), then does `git push origin HEAD:main` with the default `GITHUB_TOKEN`.
+3. **`push-darwin-browser-cache`** (`macos-26`) checks out the synchronized SHA and re-runs `push-latest-browsers.sh` so the aarch64-darwin closures land in cachix under the same pin names.
 
 **This workflow only tracks upstream latest — it does not backfill historical versions.** `scripts/backfill.sh` exists and can enumerate every unpinned version from the registry, but it is invoked manually (not from CI). Use it when you deliberately want to import a range of older versions.
 

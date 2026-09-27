@@ -4,7 +4,7 @@
 #
 # Changes from upstream:
 #   - `hashes` is an attrset keyed by system, not hardcoded.
-#   - Supports x86_64-linux, aarch64-linux, and aarch64-darwin.
+#   - Supports aarch64-linux and aarch64-darwin.
 {
   lib,
   stdenv,
@@ -68,7 +68,6 @@ let
   throwSystem = throw "playwright-browsers/webkit: unsupported system ${system}";
   archSuffix =
     {
-      x86_64-linux = "ubuntu-22.04";
       aarch64-linux = "ubuntu-22.04-arm64";
       # Upstream maps the mac26-arm64 host platform to the mac-15-arm64
       # WebKit artifact for the currently pinned revisions.

@@ -13,7 +13,7 @@ Nix flake packaging `@playwright/cli`, `@playwright/mcp`, Node.js `playwright`, 
 
 It also packages PyPI `camoufox` bundled with the current Camoufox browser, independent of the Playwright browser sets.
 
-Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
+Supported systems: `aarch64-linux`, `aarch64-darwin` (ARM only; `x86_64-linux` is not supported).
 
 Camoufox is available on `aarch64-linux` and Apple Silicon (`aarch64-darwin`).
 
@@ -163,7 +163,7 @@ playwright.packages.aarch64-linux.camoufox.override {
   };
 
   outputs = { self, nixpkgs, playwright }:
-    let system = "x86_64-linux"; in {
+    let system = "aarch64-linux"; in {
       devShells.${system}.default =
         nixpkgs.legacyPackages.${system}.mkShell {
           packages = [
@@ -230,7 +230,6 @@ nix build \
 
 Playwright browser cache coverage:
 
-- `x86_64-linux` via `ubuntu-latest`
 - `aarch64-linux` via `ubuntu-24.04-arm`
 - `aarch64-darwin` via `macos-26`
 
@@ -269,12 +268,12 @@ validation.
 Each Playwright script resolves the matching `playwright-core` version, prefetches all hashes, writes the pin file, and commits. Camoufox scripts track the browser GitHub release and the PyPI wrapper independently. Re-running with an already-pinned version is a no-op.
 
 CI runs the same update flow once a day, then reconciles all latest Playwright
-browser closures with their per-system Cachix pins. The x86_64-linux cache
-reconciliation runs before any generated pin commits are pushed to `main`; the
-Arm Linux and Darwin jobs check out that synchronized revision and perform the
-same reconciliation. Sync also updates the Camoufox browser and Python wrapper
-independently. The ARM Linux and Apple Silicon jobs build and cache `camoufox` and
-`camoufox-playwright-cli`, and reconciles the per-system Camoufox browser
+browser closures with their per-system Cachix pins. The main job runs on ARM
+Linux and reconciles the aarch64-linux cache before any generated pin commits
+are pushed to `main`; the Darwin job checks out that synchronized revision and
+performs the same reconciliation. Sync also updates the Camoufox browser and
+Python wrapper independently. Both jobs build and cache `camoufox` and
+`camoufox-playwright-cli`, and reconcile the per-system Camoufox browser
 Cachix pin on every run. The macOS job also verifies a headless browser launch.
 Older versioned browser outputs are exposed only where their pins include a
 matching platform asset.

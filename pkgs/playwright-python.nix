@@ -28,7 +28,6 @@ let
   driverSourceIsWheel = driverUrls != null;
   driverZipName =
     {
-      x86_64-linux = "linux";
       aarch64-linux = "linux-arm64";
       aarch64-darwin = "mac-arm64";
     }
@@ -64,8 +63,8 @@ let
       ${if driverSourceIsWheel then "cp -R playwright/driver/. $out/" else "cp -R . $out/"}
       # Replace the bundled node with nixpkgs nodejs. The bundled aarch64
       # node segfaults on NixOS after autoPatchelfHook (likely a glibc or
-      # stack-guard mismatch), and even on x86_64 the nixpkgs binary is the
-      # only one we can count on. playwright-python's _driver.py looks for
+      # stack-guard mismatch), so the nixpkgs binary is the only one we can
+      # count on. playwright-python's _driver.py looks for
       # ./driver/node next to the package, so swapping this symlink fixes
       # both CLI callers and library callers (`from playwright.sync_api
       # import sync_playwright`) without needing PLAYWRIGHT_NODEJS_PATH.
