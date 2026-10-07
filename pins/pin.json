@@ -77,11 +77,12 @@
     ]
   },
   "camoufox-browsers": {
-    "latest": "156.0.1-beta.34",
+    "latest": "156.0.1-beta.36",
     "versions": [
       "135.0.1-beta.24",
       "152.0.4-beta.30",
-      "156.0.1-beta.34"
+      "156.0.1-beta.34",
+      "156.0.1-beta.36"
     ]
   }
 }
