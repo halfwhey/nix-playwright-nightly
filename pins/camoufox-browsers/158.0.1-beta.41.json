@@ -1,0 +1,16 @@
+{
+  "package": "158.0.1-beta.41",
+  "tag": "v158.0.1-beta.41",
+  "sources": {
+    "aarch64-linux": {
+      "suffix": "lin.arm64",
+      "url": "https://github.com/daijro/camoufox/releases/download/v158.0.1-beta.41/camoufox-158.0.1-beta.41-lin.arm64.zip",
+      "hash": "sha256-RvujGuE2ua1txAA9tYmbmwqRTr0mtmgF9aeHNQUWU6g="
+    },
+    "aarch64-darwin": {
+      "suffix": "mac.arm64",
+      "url": "https://github.com/daijro/camoufox/releases/download/v158.0.1-beta.41/camoufox-158.0.1-beta.41-mac.arm64.zip",
+      "hash": "sha256-KGa1t1sT0ZNlVoYazs/n2ZQYRbMY6CdQZDkaE45xMLk="
+    }
+  }
+}
