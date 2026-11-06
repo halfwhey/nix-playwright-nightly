@@ -1,0 +1,54 @@
+{
+  "package": "1.65.0",
+  "playwrightVersion": "1.65.0",
+  "packageHash": "sha256-zOVHayJmixTaDHaWVfKeE4kHgCQrOLL79MsRilzpqMI=",
+  "coreHash": "sha256-6Qyz/+0ojp94u1mGfucH9c7ELKRbqThIIClLlAkxWt8=",
+  "browsers": {
+    "chromium": {
+      "revision": "1254",
+      "browserVersion": "158.0.8127.18",
+      "hashes": {
+        "x86_64-linux": "sha256-2tXkM8xiP4vn7zAG24LWqB8pMlFZD/gueiNlNY46j2M=",
+        "aarch64-linux": "sha256-ptxdNg/7psmgOqC2TqoCS1Rzm25KxXAReMcOINmY8RA=",
+        "aarch64-darwin": "sha256-Uo0630DanBs7HIi9InF+KRe+OBbal0jgVsH2wSHvdWw="
+      },
+      "arm64Cft": true
+    },
+    "chromium-headless-shell": {
+      "revision": "1254",
+      "browserVersion": "158.0.8127.18",
+      "hashes": {
+        "x86_64-linux": "sha256-CJB0HhSaPLj84F9wPn633mn4JzR6IyJcW4QK21YSMnY=",
+        "aarch64-linux": "sha256-SqW6vOF+X7XbWVAdmezjL1xPufEF6B69IoDKiB8lql4=",
+        "aarch64-darwin": "sha256-du/uCxVK8RTqRC+m5rqiVC8J0rX5EZj9YGHAyo7L0Ik="
+      },
+      "arm64Cft": true
+    },
+    "firefox": {
+      "revision": "1572",
+      "browserVersion": "159.0",
+      "hashes": {
+        "x86_64-linux": "sha256-pIy7Etrzq0vg6KvvTIRAu1DcM7ZzgnO6XhyX/xayEZI=",
+        "aarch64-linux": "sha256-iLa9RWCGtlZ24Gy4dy9SjgG73Kf1yjx3K5x01+NYd2I=",
+        "aarch64-darwin": "sha256-Hb3JLggEQzrNFGrmCQHN4QbGQXCifHL6SYOtQtVLPH4="
+      }
+    },
+    "webkit": {
+      "revision": "2388",
+      "browserVersion": "27.2",
+      "hashes": {
+        "x86_64-linux": "sha256-K2OMJYj64HX6l8lEEnHjjh5ycpaAkA156hKT0PjfLtg=",
+        "aarch64-linux": "sha256-U4cfOqRK82MrBIl1MuHHJru4+t+VAcq748b+SK06/4E=",
+        "aarch64-darwin": "sha256-SF87SDhsGdJUWbUY1AFoTWi+AURiOmksP7cr5+poCFA="
+      }
+    },
+    "ffmpeg": {
+      "revision": "1013",
+      "hashes": {
+        "x86_64-linux": "sha256-5+WbgtmcKkTaSurejqzkkglNI/0dW7ePxbltOeCiakI=",
+        "aarch64-linux": "sha256-OTpALfzK0fIjWHaywNVGWwwAaRncYElcV//En3/oOVI=",
+        "aarch64-darwin": "sha256-runukRDgLHIcOLqR/O8Kd3N7q73hXUc1YAPsdj3uqvs="
+      }
+    }
+  }
+}
